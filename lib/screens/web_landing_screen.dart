@@ -34,8 +34,7 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
   ];
   static const _ledgerTabs = ['All Transactions', 'Contributions', 'Expenses'];
 
-  static const String _apkUrl =
-      'https://github.com/CodingWithBars/trace/releases/download/APK/trace.apk';
+  static const String _apkUrl = 'https://tinyurl.com/hvpjv4a5';
 
   @override
   Widget build(BuildContext context) {

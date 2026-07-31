@@ -13,16 +13,36 @@ import 'package:flutter/services.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  FirebaseFirestore.instance.settings = const Settings(persistenceEnabled: true, cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED);
-  await FirestoreService.initialize();
-  await NotificationService.initialize();
-  
-  runApp(
-    const ProviderScope(
-      child: TraceApp(),
-    ),
-  );
+
+  try {
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    FirebaseFirestore.instance.settings = const Settings(persistenceEnabled: true, cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED);
+    await FirestoreService.initialize();
+    
+    // Initialize notification service but catch any errors (e.g. permission dialogs failing before runApp)
+    try {
+      await NotificationService.initialize();
+    } catch (e) {
+      debugPrint('Notification initialization failed: $e');
+    }
+    
+    runApp(
+      const ProviderScope(
+        child: TraceApp(),
+      ),
+    );
+  } catch (e, stackTrace) {
+    debugPrint('Initialization error: $e\n$stackTrace');
+    runApp(
+      MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: Text('Failed to initialize app: $e', style: const TextStyle(color: Colors.red)),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class TraceApp extends ConsumerWidget {
