@@ -167,6 +167,18 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
       return;
     }
 
+    if (_avatarBytes != null && _avatarBytes!.length > 700000) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'The selected image is too large. Please select a smaller photo (under 700KB).',
+          ),
+          backgroundColor: TraceColors.error,
+        ),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
     try {
       String? avatarUrl;
@@ -199,9 +211,16 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
       }
     } catch (e) {
       if (mounted) {
+        String errorMsg = e.toString();
+        if (errorMsg.startsWith('Exception: ')) {
+          errorMsg = errorMsg.substring(11);
+        } else if (errorMsg.contains('FirebaseException')) {
+          errorMsg = 'A network or server error occurred. Please try again.';
+        }
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Registration failed: ${e.toString()}'),
+            content: Text(errorMsg),
             backgroundColor: TraceColors.error,
           ),
         );
@@ -252,20 +271,45 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
   @override
   Widget build(BuildContext context) {
     final isWide = MediaQuery.of(context).size.width > 700;
-    return Stack(
-      children: [
-        Scaffold(
-          backgroundColor: TraceColors.offWhite,
-          appBar: const TraceAppBar(title: 'Registration'),
-          body: _buildForm(isWide),
-        ),
-        if (_isSplashRendered)
-          AnimatedOpacity(
-            opacity: _isSplashVisible ? 1.0 : 0.0,
-            duration: const Duration(milliseconds: 500),
-            child: _buildSplashScreen(),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (context.canPop()) {
+          context.pop();
+        } else {
+          context.go('/');
+        }
+      },
+      child: Stack(
+        children: [
+          Scaffold(
+            backgroundColor: TraceColors.offWhite,
+            appBar: TraceAppBar(
+              title: 'Registration',
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () {
+                  if (context.canPop()) {
+                    context.pop();
+                  } else {
+                    context.go('/');
+                  }
+                },
+              ),
+              // Removing actions since we only need the back button
+
+            ),
+            body: _buildForm(isWide),
           ),
-      ],
+          if (_isSplashRendered)
+            AnimatedOpacity(
+              opacity: _isSplashVisible ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 500),
+              child: _buildSplashScreen(),
+            ),
+        ],
+      ),
     );
   }
 

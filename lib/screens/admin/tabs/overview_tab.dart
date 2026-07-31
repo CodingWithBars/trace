@@ -13,6 +13,7 @@ class OverviewTab extends StatelessWidget {
   final VoidCallback onAttendance;
   final VoidCallback onPostNews;
   final VoidCallback onAddFund;
+  final VoidCallback onAddAdmin;
 
   const OverviewTab({
     super.key,
@@ -20,6 +21,7 @@ class OverviewTab extends StatelessWidget {
     required this.onAttendance,
     required this.onPostNews,
     required this.onAddFund,
+    required this.onAddAdmin,
   });
 
   @override
@@ -161,13 +163,27 @@ class OverviewTab extends StatelessWidget {
         ),
           const SizedBox(height: 24),
           // Quick actions
-          Text(
-            'Quick Actions',
-            style: GoogleFonts.inter(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: TraceColors.navyBlue,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Quick Actions',
+                style: GoogleFonts.inter(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: TraceColors.navyBlue,
+                ),
+              ),
+              TextButton.icon(
+                onPressed: () => context.push('/admin/logs'),
+                icon: const Icon(Icons.history_rounded, size: 18),
+                label: Text('Logs', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                style: TextButton.styleFrom(
+                  foregroundColor: TraceColors.royalBlue,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 12),
           Column(
@@ -211,102 +227,19 @@ class OverviewTab extends StatelessWidget {
                   ),
                 ],
               ),
-            ],
-          ),
-          const SizedBox(height: 32),
-          // Activity Log
-          Text(
-            'Activity Log',
-            style: GoogleFonts.inter(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: TraceColors.navyBlue,
-            ),
-          ),
-          const SizedBox(height: 12),
-          StreamBuilder<QuerySnapshot>(
-            stream: ActivityLogService.stream(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                return Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: TraceColors.lightGrey.withValues(alpha: 0.5)),
-                  ),
-                  child: const Center(
-                    child: Text('No recent activity.', style: TextStyle(color: TraceColors.medGrey)),
-                  ),
-                );
-              }
-
-              return Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: TraceColors.lightGrey.withValues(alpha: 0.5)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.03),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: AdminQuickAction(
+                      label: 'Manage Admins',
+                      icon: Icons.admin_panel_settings_rounded,
+                      onTap: onAddAdmin,
                     ),
-                  ],
-                ),
-                child: ListView.separated(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: snapshot.data!.docs.length,
-                  separatorBuilder: (context, index) => const Divider(height: 1, color: TraceColors.lightGrey),
-                  itemBuilder: (context, index) {
-                    final doc = snapshot.data!.docs[index];
-                    final data = doc.data() as Map<String, dynamic>;
-                    final timestamp = data['timestamp'] as Timestamp?;
-                    final timeString = timestamp != null
-                        ? DateFormat('MMM d, yyyy • h:mm a').format(timestamp.toDate())
-                        : 'Just now';
-
-                    return Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Icon(Icons.history_rounded, size: 20, color: TraceColors.medGrey.withValues(alpha: 0.7)),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  data['message'] ?? 'Unknown action',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 13,
-                                    color: TraceColors.navyBlue,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  '$timeString • by ${data['actor_name'] ?? 'System'}',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 11,
-                                    color: TraceColors.medGrey,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              );
-            },
+                  ),
+                ],
+              ),
+            ],
           ),
         ],
       ),

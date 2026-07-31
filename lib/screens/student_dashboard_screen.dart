@@ -108,16 +108,16 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
               final studentId = sessionAsync.valueOrNull;
               final isLoggedIn = studentId != null && studentId.isNotEmpty;
 
+              if (isLoggedIn) {
+                return const SizedBox();
+              }
+
               return TextButton.icon(
                 onPressed: () {
-                  if (isLoggedIn) {
-                    context.push('/student/id/$studentId');
-                  } else {
-                    context.push('/student-login');
-                  }
+                  context.push('/student-login');
                 },
-                icon: Icon(isLoggedIn ? Icons.badge_outlined : Icons.login, color: TraceColors.gold, size: 18),
-                label: Text(isLoggedIn ? 'My ID' : 'Login', style: GoogleFonts.inter(color: TraceColors.gold, fontSize: 13, fontWeight: FontWeight.w600)),
+                icon: const Icon(Icons.login, color: TraceColors.gold, size: 18),
+                label: Text('Login', style: GoogleFonts.inter(color: TraceColors.gold, fontSize: 13, fontWeight: FontWeight.w600)),
               );
             },
           ),

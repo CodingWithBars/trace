@@ -39,6 +39,7 @@ class _ScannerScreenState extends State<ScannerScreen> with TickerProviderStateM
   Event? _selectedEvent;
   List<Event> _activeEvents = [];
   bool _loadingEvents = true;
+  ScanPhase _manualPhase = ScanPhase.timeInAm;
 
   @override
   void initState() {
@@ -81,6 +82,13 @@ class _ScannerScreenState extends State<ScannerScreen> with TickerProviderStateM
     return DateTime(baseDate.year, baseDate.month, baseDate.day, time.hour, time.minute);
   }
 
+  bool _isTimeOutEnabled(String? scheduledTimeStr, DateTime eventDate) {
+    if (scheduledTimeStr == null || scheduledTimeStr.isEmpty) return true;
+    final scheduledTime = _parseScheduledTime(scheduledTimeStr, eventDate);
+    if (scheduledTime == null) return true;
+    return _networkNow.isAfter(scheduledTime) || _networkNow.isAtSameMomentAs(scheduledTime);
+  }
+
   Future<void> _loadEvents() async {
     final snap = await FirestoreService.db.collection('events')
         .where('status', whereIn: ['upcoming', 'ongoing']).get();
@@ -94,14 +102,7 @@ class _ScannerScreenState extends State<ScannerScreen> with TickerProviderStateM
       final isToday = e.date.year == now.year && e.date.month == now.month && e.date.day == now.day;
       
       // Auto-complete event check
-      DateTime? finalOut;
-      if (e.isWholeDay) {
-        finalOut = _parseScheduledTime(e.afternoonTimeOut ?? e.morningTimeOut, e.date);
-      } else if (e.isPmOnly) {
-        finalOut = _parseScheduledTime(e.afternoonTimeOut, e.date);
-      } else {
-        finalOut = _parseScheduledTime(e.morningTimeOut, e.date);
-      }
+      DateTime? finalOut = _parseScheduledTime(e.endTime, e.date);
 
       if (finalOut != null && now.isAfter(finalOut.add(const Duration(hours: 1)))) {
         // Event has expired by 1 hour past its final time out
@@ -127,83 +128,11 @@ class _ScannerScreenState extends State<ScannerScreen> with TickerProviderStateM
     }
   }
 
-  /// Determine which scan phase is currently active based on time windows.
-  /// Returns null if no window is currently open.
   ScanPhase? _determineActivePhase() {
     if (_selectedEvent == null) return null;
     if (_selectedEvent!.status == 'completed') return null;
-    final e = _selectedEvent!;
-    final now = _networkNow;
-
-    // Time-In: admin can also manually close it
-    if (!e.timeInClosed) {
-      // AM In window
-      final amInS = _parseScheduledTime(e.amInStart, e.date);
-      final amInE = _parseScheduledTime(e.amInEnd, e.date);
-      if (amInS != null && amInE != null && now.isAfter(amInS) && now.isBefore(amInE)) {
-        return ScanPhase.timeInAm;
-      }
-      // PM In window
-      if (e.isWholeDay || e.isPmOnly) {
-        final pmInS = _parseScheduledTime(e.pmInStart, e.date);
-        final pmInE = _parseScheduledTime(e.pmInEnd, e.date);
-        if (pmInS != null && pmInE != null && now.isAfter(pmInS) && now.isBefore(pmInE)) {
-          return ScanPhase.timeInPm;
-        }
-      }
-    }
-
-    // AM Out window
-    if (!e.isPmOnly) {
-      final amOutS = _parseScheduledTime(e.amOutStart, e.date);
-      final amOutE = _parseScheduledTime(e.amOutEnd, e.date);
-      
-      final bool amOutHasStarted = (amOutS != null && now.isAfter(amOutS)) || e.timeInClosed;
-      
-      if (amOutHasStarted) {
-        if (e.isAmOnly) {
-          // If AM Only, this is the final phase. Stay open indefinitely until End Event.
-          return ScanPhase.timeOutAm;
-        } else if (amOutE != null && now.isBefore(amOutE)) {
-          // If Whole Day, it must close at amOutE so PM In can start
-          return ScanPhase.timeOutAm;
-        }
-      }
-    }
-
-    // PM Out window
-    if (e.isWholeDay || e.isPmOnly) {
-      final pmOutS = _parseScheduledTime(e.pmOutStart, e.date);
-      final amOutE = _parseScheduledTime(e.amOutEnd, e.date);
-      
-      // If time in was closed and it's PM Only, or if time in was closed AND it's past amOutE for Whole Day
-      final bool pmOutHasStarted = (pmOutS != null && now.isAfter(pmOutS)) || 
-                                   (e.isPmOnly && e.timeInClosed) ||
-                                   (e.isWholeDay && e.timeInClosed && amOutE != null && now.isAfter(amOutE));
-
-      if (pmOutHasStarted) {
-        // This is the final phase. Stay open indefinitely until End Event.
-        return ScanPhase.timeOutPm;
-      }
-    }
-
-    // Fallback for legacy events without stored gate windows — use scheduled base times
-    if (e.amInStart == null) {
-      if (!e.timeInClosed) return ScanPhase.timeInAm;
-      final morningOut = _parseScheduledTime(e.morningTimeOut, e.date);
-      if (morningOut != null && now.isAfter(morningOut)) {
-        if (e.isWholeDay) {
-          final afternoonIn = _parseScheduledTime(e.afternoonTimeIn, e.date);
-          if (afternoonIn != null && now.isAfter(afternoonIn)) return ScanPhase.timeInPm;
-          return ScanPhase.timeOutAm;
-        }
-        return ScanPhase.timeOutAm;
-      }
-    }
-
-    return null;
+    return _manualPhase;
   }
-
 
   Future<void> _downloadOfflineData() async {
     if (_selectedEvent == null) return;
@@ -316,10 +245,30 @@ class _ScannerScreenState extends State<ScannerScreen> with TickerProviderStateM
     );
 
     if (!mounted) return;
+    final bool canVoid = result.status == ScanResultStatus.timeInSuccess || 
+                         result.status == ScanResultStatus.timeOutSuccess || 
+                         result.status == ScanResultStatus.lateEntry || 
+                         result.status == ScanResultStatus.attendanceComplete;
+
     await ScanResultModal.show(context, result, activePhase, () {
       _controller.start();
       setState(() => _isProcessing = false);
-    });
+    }, onVoid: canVoid ? () async {
+      if (result.attendanceDocId != null) {
+        await AttendanceService.voidScan(
+          attendanceDocId: result.attendanceDocId!,
+          phase: activePhase,
+          event: _selectedEvent!,
+          isOfflineMode: _isOfflineMode,
+          offlineAttendance: _offlineAttendance,
+        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Scan voided successfully.')));
+        }
+      }
+      _controller.start();
+      setState(() => _isProcessing = false);
+    } : null);
   }
 
   @override
@@ -487,38 +436,30 @@ class _ScannerScreenState extends State<ScannerScreen> with TickerProviderStateM
                               ),
                     if (!_loadingEvents && _activeEvents.isNotEmpty) ...[
                       const SizedBox(height: 8),
-                      Builder(builder: (ctx) {
-                        final activePhase = _determineActivePhase();
-                        if (activePhase == null) {
-                          return Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.08),
-                              borderRadius: BorderRadius.circular(24),
-                              border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
-                            ),
-                            child: Row(mainAxisSize: MainAxisSize.min, children: [
-                              const Icon(Icons.schedule_rounded, color: Colors.white54, size: 14),
-                              const SizedBox(width: 6),
-                              Text('No Active Session', style: GoogleFonts.inter(color: Colors.white54, fontSize: 13)),
-                            ]),
-                          );
-                        }
-                        return Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: TraceColors.gold.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(24),
-                            border: Border.all(color: TraceColors.gold, width: 1.5),
+                      // Dynamic Phase Buttons based on Event Type
+                      if (_selectedEvent != null) ...[
+                        if (_selectedEvent!.isWholeDay || _selectedEvent!.isAmOnly) ...[
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              _buildPhaseBtn('Morning In', ScanPhase.timeInAm),
+                              const SizedBox(width: 8),
+                              _buildPhaseBtn('Morning Out', ScanPhase.timeOutAm, isEnabled: _isTimeOutEnabled(_selectedEvent!.morningTimeOut, _selectedEvent!.date)),
+                            ],
                           ),
-                          child: Row(mainAxisSize: MainAxisSize.min, children: [
-                            const Icon(Icons.sensors_rounded, color: TraceColors.gold, size: 14),
-                            const SizedBox(width: 6),
-                            Text('Scanning: ${activePhase.label}',
-                              style: GoogleFonts.inter(color: TraceColors.gold, fontSize: 13, fontWeight: FontWeight.w700)),
-                          ]),
-                        );
-                      }),
+                          const SizedBox(height: 8),
+                        ],
+                        if (_selectedEvent!.isWholeDay || _selectedEvent!.isPmOnly) ...[
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              _buildPhaseBtn('Afternoon In', ScanPhase.timeInPm),
+                              const SizedBox(width: 8),
+                              _buildPhaseBtn('Afternoon Out', ScanPhase.timeOutPm, isEnabled: _isTimeOutEnabled(_selectedEvent!.afternoonTimeOut, _selectedEvent!.date)),
+                            ],
+                          ),
+                        ],
+                      ],
                     ],
                   ]),
                 ),
@@ -639,19 +580,71 @@ class _ScannerScreenState extends State<ScannerScreen> with TickerProviderStateM
     );
   }
 
-  Widget _glassDropdown<T>({required T? value, required String hint, required List<DropdownMenuItem<T>> items, required ValueChanged<T?> onChanged}) {
-    return DropdownButtonHideUnderline(
-      child: DropdownButton<T>(
-        value: value,
-        hint: Text(hint, style: GoogleFonts.inter(color: Colors.white70, fontSize: 14)),
-        isExpanded: true,
-        dropdownColor: TraceColors.navyBlue,
-        icon: const Icon(Icons.keyboard_arrow_down_rounded, color: TraceColors.gold),
-        style: GoogleFonts.inter(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
-        items: items,
-        onChanged: onChanged,
+  Widget _glassDropdown({
+    required Event? value,
+    required String hint,
+    required List<DropdownMenuItem<Event>> items,
+    required ValueChanged<Event?> onChanged,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        menuMaxHeight: 240,
+        border: Border.all(color: Colors.white30),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<Event>(
+          value: value,
+          hint: Text(hint, style: GoogleFonts.inter(color: Colors.white70, fontSize: 14)),
+          isExpanded: true,
+          dropdownColor: TraceColors.navyBlue,
+          icon: const Icon(Icons.keyboard_arrow_down_rounded, color: TraceColors.gold),
+          style: GoogleFonts.inter(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
+          items: items,
+          onChanged: (e) {
+            onChanged(e);
+            if (e != null) {
+              if (e.isAmOnly || e.isWholeDay) {
+                setState(() => _manualPhase = ScanPhase.timeInAm);
+              } else if (e.isPmOnly) {
+                setState(() => _manualPhase = ScanPhase.timeInPm);
+              }
+            }
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPhaseBtn(String label, ScanPhase phase, {bool isEnabled = true}) {
+    final bool isSelected = _manualPhase == phase;
+    return Expanded(
+      child: GestureDetector(
+        onTap: isEnabled ? () => setState(() => _manualPhase = phase) : null,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: !isEnabled
+                ? Colors.white.withValues(alpha: 0.1)
+                : (isSelected ? TraceColors.navyBlue : Colors.transparent),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: !isEnabled
+                  ? Colors.white12
+                  : (isSelected ? TraceColors.navyBlue : Colors.white30),
+            ),
+          ),
+          child: Text(label,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+              color: !isEnabled
+                  ? Colors.white30
+                  : (isSelected ? Colors.white : Colors.white54),
+            )),
+        ),
       ),
     );
   }

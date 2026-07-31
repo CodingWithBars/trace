@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'dart:convert';
 import '../theme/app_theme.dart';
 import '../services/attendance_service.dart';
 
@@ -7,19 +8,21 @@ class ScanResultModal extends StatefulWidget {
   final ScanResult result;
   final ScanPhase phase;
   final VoidCallback onContinue;
+  final VoidCallback? onVoid;
 
   const ScanResultModal({
     super.key,
     required this.result,
     required this.phase,
     required this.onContinue,
+    this.onVoid,
   });
 
-  static Future<void> show(BuildContext context, ScanResult result, ScanPhase phase, VoidCallback onContinue) {
+  static Future<void> show(BuildContext context, ScanResult result, ScanPhase phase, VoidCallback onContinue, {VoidCallback? onVoid}) {
     return showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => ScanResultModal(result: result, phase: phase, onContinue: onContinue),
+      builder: (_) => ScanResultModal(result: result, phase: phase, onContinue: onContinue, onVoid: onVoid),
     );
   }
 
@@ -57,29 +60,70 @@ class _ScanResultModalState extends State<ScanResultModal> with SingleTickerProv
         elevation: 24,
         child: ScaleTransition(
           scale: _scaleAnim,
-          child: Container(
-            width: 340,
-            padding: const EdgeInsets.all(32),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(24),
-              color: TraceColors.white,
-              border: Border.all(color: config.borderColor, width: 2),
-              boxShadow: [BoxShadow(color: config.borderColor.withValues(alpha: 0.2), blurRadius: 24, spreadRadius: 4)],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Icon circle
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: config.iconBg,
-                  ),
-                  child: Icon(config.icon, size: 40, color: config.iconColor),
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                width: 340,
+                padding: const EdgeInsets.all(32),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(24),
+                  color: TraceColors.white,
+                  border: Border.all(color: config.borderColor, width: 2),
+                  boxShadow: [BoxShadow(color: config.borderColor.withValues(alpha: 0.2), blurRadius: 24, spreadRadius: 4)],
                 ),
-                const SizedBox(height: 20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Avatar with Status Badge
+                    Stack(
+                      alignment: Alignment.bottomRight,
+                      clipBehavior: Clip.none,
+                      children: [
+                        Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: TraceColors.offWhite,
+                            border: Border.all(color: config.borderColor, width: 2),
+                          ),
+                          child: ClipOval(
+                            child: widget.result.studentAvatarUrl != null && widget.result.studentAvatarUrl!.isNotEmpty
+                                ? (widget.result.studentAvatarUrl!.startsWith('data:image')
+                                    ? Image.memory(
+                                        const Base64Decoder().convert(widget.result.studentAvatarUrl!.split(',').last),
+                                        fit: BoxFit.cover,
+                                        width: 80,
+                                        height: 80,
+                                        errorBuilder: (ctx, err, stack) => const Icon(Icons.person, size: 40, color: TraceColors.medGrey),
+                                      )
+                                    : Image.network(
+                                        widget.result.studentAvatarUrl!,
+                                        fit: BoxFit.cover,
+                                        width: 80,
+                                        height: 80,
+                                        errorBuilder: (ctx, err, stack) => const Icon(Icons.person, size: 40, color: TraceColors.medGrey),
+                                      ))
+                                : const Icon(Icons.person, size: 40, color: TraceColors.medGrey),
+                          ),
+                        ),
+                        Positioned(
+                          bottom: -4,
+                          right: -4,
+                          child: Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: config.iconBg,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: TraceColors.white, width: 2),
+                            ),
+                            child: Icon(config.icon, size: 16, color: config.iconColor),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
                 // Status label
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -168,8 +212,32 @@ class _ScanResultModalState extends State<ScanResultModal> with SingleTickerProv
               ],
             ),
           ),
-        ),
+          if (widget.onVoid != null && widget.result.attendanceDocId != null)
+            Positioned(
+              top: 12,
+              right: 12,
+              child: TextButton.icon(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  widget.onVoid!();
+                },
+                style: TextButton.styleFrom(
+                  foregroundColor: TraceColors.error,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                icon: const Icon(Icons.undo_rounded, size: 16),
+                label: Text(
+                  'Void',
+                  style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 13, decoration: TextDecoration.underline),
+                ),
+              ),
+            ),
+        ],
       ),
+    ),
+  ),
     );
   }
 

@@ -1,24 +1,26 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/app_theme.dart';
 import '../widgets/shared_widgets.dart';
 import '../services/student_service.dart';
+import '../services/student_session_service.dart';
 import '../models/student.dart';
 
-class StudentIdScreen extends StatefulWidget {
+class StudentIdScreen extends ConsumerStatefulWidget {
   final String studentId;
   const StudentIdScreen({super.key, required this.studentId});
 
   @override
-  State<StudentIdScreen> createState() => _StudentIdScreenState();
+  ConsumerState<StudentIdScreen> createState() => _StudentIdScreenState();
 }
 
-class _StudentIdScreenState extends State<StudentIdScreen> {
+class _StudentIdScreenState extends ConsumerState<StudentIdScreen> {
   Student? _student;
   bool _isLoading = true;
 
@@ -30,7 +32,12 @@ class _StudentIdScreenState extends State<StudentIdScreen> {
 
   Future<void> _loadStudent() async {
     final student = await StudentService.getStudentByStudentId(widget.studentId);
-    if (mounted) setState(() { _student = student; _isLoading = false; });
+    if (mounted) {
+      setState(() { 
+        _student = student; 
+        _isLoading = false; 
+      });
+    }
   }
 
   void _openEditProfile() {
@@ -44,6 +51,11 @@ class _StudentIdScreenState extends State<StudentIdScreen> {
         onSaved: (updated) => setState(() => _student = updated),
       ),
     );
+  }
+
+  void _logout() {
+    ref.read(studentSessionProvider.notifier).logout();
+    context.go('/');
   }
 
   @override
@@ -64,21 +76,38 @@ class _StudentIdScreenState extends State<StudentIdScreen> {
       );
     }
 
-    return Scaffold(
-      backgroundColor: TraceColors.offWhite,
-      appBar: TraceAppBar(title: 'My ID', actions: [
-        IconButton(
-          onPressed: _openEditProfile,
-          icon: const Icon(Icons.edit_outlined, color: TraceColors.gold),
-          tooltip: 'Edit Profile',
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        context.go('/');
+      },
+      child: Scaffold(
+        backgroundColor: TraceColors.offWhite,
+        appBar: TraceAppBar(
+          title: 'My ID',
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => context.go('/'),
+          ),
+          actions: [
+            IconButton(
+              onPressed: _logout,
+              icon: const Icon(Icons.logout_rounded, color: TraceColors.gold),
+              tooltip: 'Logout',
+            ),
+          ],
         ),
-      ]),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 400),
-            child: Column(children: [_buildIdCard()]),
+        body: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 400),
+              child: Column(children: [
+                _buildIdCard(),
+                _buildNoteWidget(),
+              ]),
+            ),
           ),
         ),
       ),
@@ -86,66 +115,109 @@ class _StudentIdScreenState extends State<StudentIdScreen> {
   }
 
   Widget _buildIdCard() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: TraceColors.gold, width: 2),
-        boxShadow: [BoxShadow(color: TraceColors.navyBlue.withValues(alpha: 0.15), blurRadius: 30, offset: const Offset(0, 10))],
-      ),
-      child: Column(children: [
-        Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
-          Container(
-            width: 120, height: 120,
-            decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: TraceColors.gold, width: 3), color: TraceColors.offWhite),
-            child: ClipOval(child: _buildAvatarWidget(_student!.avatarUrl)),
-          ),
-          const SizedBox(width: 20),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(_student!.name.toUpperCase(),
-              style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w800, color: TraceColors.navyBlue, height: 1.2)),
-            const SizedBox(height: 12),
-            Text('${_student!.course} - ${_student!.yearLevel}',
-              style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: TraceColors.medGrey)),
-          ])),
-        ]),
-        const SizedBox(height: 24),
-        const Divider(color: TraceColors.lightGrey),
-        const SizedBox(height: 24),
+    return Stack(
+      children: [
         Container(
-          padding: const EdgeInsets.all(16),
+          width: double.infinity,
+          padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: TraceColors.lightGrey.withValues(alpha: 0.5), width: 1.5),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: TraceColors.gold, width: 2),
+            boxShadow: [BoxShadow(color: TraceColors.navyBlue.withValues(alpha: 0.15), blurRadius: 30, offset: const Offset(0, 10))],
           ),
-          child: QrImageView(
-            data: _student!.qrHash,
-            version: QrVersions.auto,
-            size: 240,
-            eyeStyle: const QrEyeStyle(eyeShape: QrEyeShape.square, color: TraceColors.navyBlue),
-            dataModuleStyle: const QrDataModuleStyle(dataModuleShape: QrDataModuleShape.circle, color: TraceColors.navyBlue),
+          child: Column(children: [
+            Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+              Container(
+                width: 96, height: 96,
+                decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: TraceColors.gold, width: 3), color: TraceColors.offWhite),
+                child: ClipOval(child: _buildAvatarWidget(_student!.avatarUrl)),
+              ),
+              const SizedBox(width: 20),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(_student!.name.toUpperCase(),
+                  style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w800, color: TraceColors.navyBlue, height: 1.2)),
+                const SizedBox(height: 12),
+                Text('${_student!.course} - ${_student!.yearLevel}',
+                  style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: TraceColors.medGrey)),
+              ])),
+            ]),
+            const SizedBox(height: 24),
+            const Divider(color: TraceColors.lightGrey),
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: TraceColors.lightGrey.withValues(alpha: 0.5), width: 1.5),
+              ),
+              child: QrImageView(
+                data: _student!.qrHash,
+                version: QrVersions.auto,
+                size: 288,
+                eyeStyle: const QrEyeStyle(eyeShape: QrEyeShape.square, color: TraceColors.navyBlue),
+                dataModuleStyle: const QrDataModuleStyle(dataModuleShape: QrDataModuleShape.circle, color: TraceColors.navyBlue),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(color: TraceColors.gold.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(20)),
+              child: Text('ID: ${_student!.studentId}',
+                style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800, color: TraceColors.navyBlue, letterSpacing: 2)),
+            ),
+            const SizedBox(height: 24),
+            const Divider(color: TraceColors.lightGrey),
+            const SizedBox(height: 24),
+            GoldButton(
+              label: 'View Attendance Summary',
+              icon: Icons.analytics_outlined,
+              fullWidth: true,
+              onPressed: () => context.push('/student/summary/${_student!.studentId}'),
+            ),
+          ]),
+        ),
+        Positioned(
+          top: 0,
+          right: 0,
+          child: IconButton(
+            icon: const Icon(Icons.edit_rounded, color: TraceColors.medGrey),
+            tooltip: 'Edit Profile',
+            onPressed: _openEditProfile,
           ),
         ),
-        const SizedBox(height: 16),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(color: TraceColors.gold.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(20)),
-          child: Text('ID: ${_student!.studentId}',
-            style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800, color: TraceColors.navyBlue, letterSpacing: 2)),
-        ),
-        const SizedBox(height: 24),
-        const Divider(color: TraceColors.lightGrey),
-        const SizedBox(height: 24),
-        GoldButton(
-          label: 'View Attendance Summary',
-          icon: Icons.analytics_outlined,
-          fullWidth: true,
-          onPressed: () => context.push('/student/summary/${_student!.studentId}'),
-        ),
-      ]),
+      ],
+    );
+  }
+
+  Widget _buildNoteWidget() {
+    return Container(
+      margin: const EdgeInsets.only(top: 24),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: TraceColors.gold.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: TraceColors.gold.withValues(alpha: 0.5), width: 1),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.info_outline, color: TraceColors.gold, size: 24),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Note: After Scan Check your Attendance Summary Button, tap the On Going/Current Event to see if time in/time out is recorded.',
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                color: TraceColors.navyBlue,
+                fontWeight: FontWeight.w500,
+                height: 1.4,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -17,10 +18,10 @@ class EventAttendanceScreen extends StatefulWidget {
 class _EventAttendanceScreenState extends State<EventAttendanceScreen> {
   bool _isLoading = true;
   String _eventName = 'Attendance';
-  
+
   List<Attendance> _allAttendance = [];
   final Map<String, Map<String, dynamic>> _studentsMap = {};
-  
+
   String _searchQuery = '';
   String _selectedProgram = 'All';
   final List<String> _programs = ['All', 'BSBA', 'BSA', 'BTLED', 'BSIT'];
@@ -34,20 +35,26 @@ class _EventAttendanceScreenState extends State<EventAttendanceScreen> {
   Future<void> _fetchData() async {
     try {
       // 1. Fetch event name
-      final eventDoc = await FirebaseFirestore.instance.collection('events').doc(widget.eventId).get();
+      final eventDoc = await FirebaseFirestore.instance
+          .collection('events')
+          .doc(widget.eventId)
+          .get();
       if (eventDoc.exists) {
         _eventName = eventDoc.data()?['event_name'] ?? 'Attendance';
       }
 
       // 2. Fetch attendance
-      _allAttendance = await AttendanceService.getEventAttendance(widget.eventId);
+      _allAttendance = await AttendanceService.getEventAttendance(
+        widget.eventId,
+      );
 
       // 3. Fetch all students (to join data)
-      final studentsSnap = await FirebaseFirestore.instance.collection('students').get();
+      final studentsSnap = await FirebaseFirestore.instance
+          .collection('students')
+          .get();
       for (var doc in studentsSnap.docs) {
         _studentsMap[doc.id] = doc.data();
       }
-
     } catch (e) {
       debugPrint('Error fetching event attendance data: $e');
     } finally {
@@ -74,13 +81,14 @@ class _EventAttendanceScreenState extends State<EventAttendanceScreen> {
       final studentData = _studentsMap[att.studentId];
       final course = (studentData?['course']?.toString() ?? '').toUpperCase();
       final name = (studentData?['name']?.toString() ?? '').toLowerCase();
-      final studentId = (studentData?['studentId']?.toString() ?? '').toLowerCase();
-      
+      final studentId = (studentData?['studentId']?.toString() ?? '')
+          .toLowerCase();
+
       // Program filter
       if (_selectedProgram != 'All' && course != _selectedProgram) {
         return false;
       }
-      
+
       // Search filter
       if (_searchQuery.isNotEmpty) {
         final q = _searchQuery.toLowerCase();
@@ -88,7 +96,7 @@ class _EventAttendanceScreenState extends State<EventAttendanceScreen> {
           return false;
         }
       }
-      
+
       return true;
     }).toList();
   }
@@ -99,7 +107,9 @@ class _EventAttendanceScreenState extends State<EventAttendanceScreen> {
       return const Scaffold(
         backgroundColor: TraceColors.offWhite,
         appBar: TraceAppBar(title: 'Loading...'),
-        body: Center(child: CircularProgressIndicator(color: TraceColors.navyBlue)),
+        body: Center(
+          child: CircularProgressIndicator(color: TraceColors.navyBlue),
+        ),
       );
     }
 
@@ -117,22 +127,37 @@ class _EventAttendanceScreenState extends State<EventAttendanceScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Program Attendance', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: TraceColors.navyBlue)),
+                  Text(
+                    'Program Attendance',
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: TraceColors.navyBlue,
+                    ),
+                  ),
                   const SizedBox(height: 12),
                   // 2x2 Grid of Programs
                   Row(
                     children: [
-                      Expanded(child: _buildProgramStat('BSBA', totals['BSBA'] ?? 0)),
+                      Expanded(
+                        child: _buildProgramStat('BSBA', totals['BSBA'] ?? 0),
+                      ),
                       const SizedBox(width: 12),
-                      Expanded(child: _buildProgramStat('BSA', totals['BSA'] ?? 0)),
+                      Expanded(
+                        child: _buildProgramStat('BSA', totals['BSA'] ?? 0),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      Expanded(child: _buildProgramStat('BSIT', totals['BSIT'] ?? 0)),
+                      Expanded(
+                        child: _buildProgramStat('BSIT', totals['BSIT'] ?? 0),
+                      ),
                       const SizedBox(width: 12),
-                      Expanded(child: _buildProgramStat('BTLED', totals['BTLED'] ?? 0)),
+                      Expanded(
+                        child: _buildProgramStat('BTLED', totals['BTLED'] ?? 0),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 24),
@@ -148,14 +173,23 @@ class _EventAttendanceScreenState extends State<EventAttendanceScreen> {
                             border: Border.all(color: Colors.black12),
                           ),
                           child: TextField(
-                            onChanged: (val) => setState(() => _searchQuery = val),
+                            onChanged: (val) =>
+                                setState(() => _searchQuery = val),
                             style: GoogleFonts.inter(fontSize: 14),
                             decoration: InputDecoration(
                               hintText: 'Search student...',
-                              hintStyle: GoogleFonts.inter(color: TraceColors.medGrey),
-                              prefixIcon: const Icon(Icons.search, color: TraceColors.medGrey),
+                              hintStyle: GoogleFonts.inter(
+                                color: TraceColors.medGrey,
+                              ),
+                              prefixIcon: const Icon(
+                                Icons.search,
+                                color: TraceColors.medGrey,
+                              ),
                               border: InputBorder.none,
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
                             ),
                           ),
                         ),
@@ -172,11 +206,26 @@ class _EventAttendanceScreenState extends State<EventAttendanceScreen> {
                         child: DropdownButtonHideUnderline(
                           child: DropdownButton<String>(
                             value: _selectedProgram,
-                            icon: const Icon(Icons.filter_list, color: TraceColors.navyBlue),
-                            style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: TraceColors.navyBlue),
-                            items: _programs.map((p) => DropdownMenuItem(value: p, child: Text(p))).toList(),
+                            icon: const Icon(
+                              Icons.filter_list,
+                              color: TraceColors.navyBlue,
+                            ),
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: TraceColors.navyBlue,
+                            ),
+                            items: _programs
+                                .map(
+                                  (p) => DropdownMenuItem(
+                                    value: p,
+                                    child: Text(p),
+                                  ),
+                                )
+                                .toList(),
                             onChanged: (val) {
-                              if (val != null) setState(() => _selectedProgram = val);
+                              if (val != null)
+                                setState(() => _selectedProgram = val);
                             },
                           ),
                         ),
@@ -184,7 +233,14 @@ class _EventAttendanceScreenState extends State<EventAttendanceScreen> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  Text('List of students (${filteredAttendance.length})', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: TraceColors.navyBlue)),
+                  Text(
+                    'List of students (${filteredAttendance.length})',
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: TraceColors.navyBlue,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                 ],
               ),
@@ -197,67 +253,99 @@ class _EventAttendanceScreenState extends State<EventAttendanceScreen> {
                     child: Center(
                       child: Padding(
                         padding: const EdgeInsets.all(32),
-                        child: Text('No students found.', style: GoogleFonts.inter(color: TraceColors.medGrey)),
+                        child: Text(
+                          'No students found.',
+                          style: GoogleFonts.inter(color: TraceColors.medGrey),
+                        ),
                       ),
                     ),
                   )
                 : SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final att = filteredAttendance[index];
-                        final studentData = _studentsMap[att.studentId];
-                        final name = studentData?['name'] ?? 'Unknown Student';
-                        final course = (studentData?['course'] ?? 'N/A').toString().toUpperCase();
-                        final year = studentData?['year_level'] ?? 'N/A';
-                        final sId = studentData?['studentId'] ?? 'N/A';
-                        final avatarUrl = studentData?['avatar_url'] ?? '';
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      final att = filteredAttendance[index];
+                      final studentData = _studentsMap[att.studentId];
+                      final name = studentData?['name'] ?? 'Unknown Student';
+                      final course = (studentData?['course'] ?? 'N/A')
+                          .toString()
+                          .toUpperCase();
+                      final year = studentData?['year_level'] ?? 'N/A';
+                      final sId = studentData?['student_id'] ?? 'N/A';
+                      final avatarUrl = studentData?['avatar_url'] ?? '';
 
-                        String initials = '';
-                        if (name.isNotEmpty) {
-                          final parts = name.trim().split(' ');
-                          if (parts.length > 1) {
-                            initials = '${parts[0][0]}${parts.last[0]}'.toUpperCase();
-                          } else {
-                            initials = name[0].toUpperCase();
-                          }
+                      String initials = '';
+                      if (name.isNotEmpty) {
+                        final parts = name.trim().split(' ');
+                        if (parts.length > 1) {
+                          initials = '${parts[0][0]}${parts.last[0]}'
+                              .toUpperCase();
+                        } else {
+                          initials = name[0].toUpperCase();
                         }
+                      }
 
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: TraceCard(
-                            padding: const EdgeInsets.all(12),
-                            child: Row(
-                              children: [
-                                CircleAvatar(
-                                  radius: 24,
-                                  backgroundColor: TraceColors.royalBlue.withValues(alpha: 0.1),
-                                  backgroundImage: avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null,
-                                  child: avatarUrl.isEmpty ? Text(initials, style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: TraceColors.royalBlue)) : null,
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        name,
-                                        style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.bold, color: TraceColors.navyBlue),
+                      ImageProvider? imageProvider;
+                      if (avatarUrl.isNotEmpty) {
+                        if (avatarUrl.startsWith('data:image')) {
+                          try {
+                            imageProvider = MemoryImage(
+                              base64Decode(avatarUrl.split(',').last),
+                            );
+                          } catch (_) {}
+                        } else {
+                          imageProvider = NetworkImage(avatarUrl);
+                        }
+                      }
+
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: TraceCard(
+                          padding: const EdgeInsets.all(12),
+                          child: Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 24,
+                                backgroundColor: TraceColors.royalBlue
+                                    .withValues(alpha: 0.1),
+                                backgroundImage: imageProvider,
+                                child: imageProvider == null
+                                    ? Text(
+                                        initials,
+                                        style: GoogleFonts.inter(
+                                          fontWeight: FontWeight.w700,
+                                          color: TraceColors.royalBlue,
+                                        ),
+                                      )
+                                    : null,
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      name,
+                                      style: GoogleFonts.inter(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.bold,
+                                        color: TraceColors.navyBlue,
                                       ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        '$course | Year $year | $sId',
-                                        style: GoogleFonts.inter(fontSize: 13, color: TraceColors.medGrey),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '$course | $year | $sId',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 13,
+                                        color: TraceColors.medGrey,
                                       ),
-                                    ],
-                                  ),
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
-                        );
-                      },
-                      childCount: filteredAttendance.length,
-                    ),
+                        ),
+                      );
+                    }, childCount: filteredAttendance.length),
                   ),
           ),
           const SliverToBoxAdapter(child: SizedBox(height: 32)),
@@ -273,16 +361,34 @@ class _EventAttendanceScreenState extends State<EventAttendanceScreen> {
         color: TraceColors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(color: TraceColors.royalBlue.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(
+            color: TraceColors.royalBlue.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(program, style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600, color: TraceColors.navyBlue)),
+          Text(
+            program,
+            style: GoogleFonts.inter(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: TraceColors.navyBlue,
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            child: Text('$count', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: TraceColors.gold)),
+            child: Text(
+              '$count',
+              style: GoogleFonts.inter(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: TraceColors.gold,
+              ),
+            ),
           ),
         ],
       ),

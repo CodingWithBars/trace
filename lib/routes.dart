@@ -12,10 +12,12 @@ import 'screens/student_summary_screen.dart';
 import 'screens/scanner_screen.dart';
 import 'screens/admin/admin_login_screen.dart';
 import 'screens/admin/admin_dashboard_screen.dart';
+import 'screens/admin/manage_admins_screen.dart';
 import 'screens/admin/students_list_screen.dart';
 import 'screens/admin/attendance_events_screen.dart';
 import 'screens/admin/event_attendance_screen.dart';
 import 'screens/admin/id_claims_screen.dart';
+import 'screens/admin/activity_logs_screen.dart';
 import 'screens/claim_id_screen.dart';
 import 'screens/privacy_policy_screen.dart';
 import 'screens/terms_conditions_screen.dart';
@@ -70,6 +72,8 @@ final routerProvider = Provider<GoRouter>((ref) {
     GoRoute(path: '/admin/attendance', builder: (context, state) => const AttendanceEventsScreen()),
     GoRoute(path: '/admin/attendance/:eventId', builder: (context, state) => EventAttendanceScreen(eventId: state.pathParameters['eventId']!)),
     GoRoute(path: '/admin/id-claims', builder: (context, state) => const IdClaimsScreen()),
+    GoRoute(path: '/admin/logs', builder: (context, state) => const ActivityLogsScreen()),
+    GoRoute(path: '/admin/manage_admins', builder: (context, state) => const ManageAdminsScreen()),
     GoRoute(path: '/scanner', builder: (context, state) => const ScannerScreen()),
   ],
   );

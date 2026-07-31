@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final authServiceProvider = Provider<AuthService>((ref) => AuthService());
@@ -18,7 +19,16 @@ class AuthService {
 
   Future<String?> signIn(String email, String password) async {
     try {
-      await _auth.signInWithEmailAndPassword(email: email, password: password);
+      final cred = await _auth.signInWithEmailAndPassword(email: email, password: password);
+      
+      if (cred.user != null) {
+        final doc = await FirestoreService.admins.doc(cred.user!.uid).get();
+        if (!doc.exists) {
+          await _auth.signOut();
+          return 'Access Denied: You do not have admin privileges.';
+        }
+      }
+
       return null; // success
     } on FirebaseAuthException catch (e) {
       switch (e.code) {
@@ -43,6 +53,52 @@ class AuthService {
   Future<void> signOut() async {
     await _auth.signOut();
   }
+
+  Future<String?> createAdmin(String name, String email, String password) async {
+    try {
+      // Initialize a secondary Firebase app to prevent logging out the current admin
+      FirebaseApp tempApp = await Firebase.initializeApp(
+        name: 'tempAdminCreator',
+        options: Firebase.app().options,
+      );
+      
+      final tempAuth = FirebaseAuth.instanceFor(app: tempApp);
+      final userCred = await tempAuth.createUserWithEmailAndPassword(email: email, password: password);
+      
+      if (userCred.user != null) {
+        await FirestoreService.admins.doc(userCred.user!.uid).set({
+          'name': name,
+          'email': email,
+          'role': 'admin',
+          'created_at': FieldValue.serverTimestamp(),
+          'status': 'active',
+        });
+      }
+
+      await tempApp.delete();
+      return null; // success
+    } on FirebaseAuthException catch (e) {
+      try {
+        await Firebase.app('tempAdminCreator').delete();
+      } catch (_) {}
+      
+      switch (e.code) {
+        case 'email-already-in-use':
+          return 'An account already exists with this email.';
+        case 'invalid-email':
+          return 'Invalid email address.';
+        case 'weak-password':
+          return 'The password provided is too weak.';
+        default:
+          return e.message ?? 'Failed to create admin account.';
+      }
+    } catch (e) {
+      try {
+        await Firebase.app('tempAdminCreator').delete();
+      } catch (_) {}
+      return 'An unexpected error occurred.';
+    }
+  }
 }
 
 class FirestoreService {
@@ -64,4 +120,5 @@ class FirestoreService {
   static CollectionReference get attendance => _db.collection('attendance');
   static CollectionReference get funds => _db.collection('funds');
   static CollectionReference get announcements => _db.collection('announcements');
+  static CollectionReference get admins => _db.collection('admins');
 }

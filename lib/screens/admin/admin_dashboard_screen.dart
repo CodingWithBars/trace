@@ -12,6 +12,7 @@ import '../../services/auth_service.dart';
 import '../../services/event_service.dart';
 import '../../services/pdf_report_service.dart';
 import '../../services/student_service.dart';
+import '../../services/activity_log_service.dart';
 import '../../models/event.dart';
 import 'package:printing/printing.dart';
 import 'package:intl/intl.dart';
@@ -302,6 +303,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
           onAttendance: () => context.push('/admin/attendance'),
           onPostNews: _showAnnouncementDialog,
           onAddFund: _showFundDialog,
+          onAddAdmin: () => context.push('/admin/manage_admins'),
         );
       case 1:
         return EventsTab(
@@ -324,6 +326,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
           onAttendance: () => context.push('/admin/attendance'),
           onPostNews: _showAnnouncementDialog,
           onAddFund: _showFundDialog,
+          onAddAdmin: () => context.push('/admin/manage_admins'),
         );
     }
   }
@@ -376,7 +379,6 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
   }
 
 
-
   String? _formatTimeOfDay(TimeOfDay? t) {
     if (t == null) return null;
     return '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
@@ -388,59 +390,29 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
     return TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1]));
   }
 
-  TimeOfDay? _shiftTime(TimeOfDay? base, int deltaMinutes) {
-    if (base == null) return null;
-    final total = base.hour * 60 + base.minute + deltaMinutes;
-    return TimeOfDay(
-      hour: (total ~/ 60).clamp(0, 23),
-      minute: (total % 60).clamp(0, 59),
-    );
-  }
-
-  Map<String, TimeOfDay?> _computeGates({
-    required TimeOfDay? morningTimeIn,
-    required TimeOfDay? morningTimeOut,
-    required TimeOfDay? afternoonTimeIn,
-    required TimeOfDay? afternoonTimeOut,
-  }) {
-    return {
-      'amInStart': _shiftTime(morningTimeIn, -60), // 1hr before AM start
-      'amInEnd': _shiftTime(morningTimeIn, 60), // 1hr after AM start
-      'amOutStart': _shiftTime(morningTimeOut, -30), // 30m before AM end
-      'amOutEnd': _shiftTime(morningTimeOut, 60), // 1hr after AM end
-      'pmInStart': _shiftTime(afternoonTimeIn, 0), // At PM start
-      'pmInEnd': _shiftTime(afternoonTimeIn, 90), // 1.5hr after PM start
-      'pmOutStart': _shiftTime(afternoonTimeOut, -30), // 30m before PM end
-      'pmOutEnd': _shiftTime(afternoonTimeOut, 90), // 1.5hr after PM end
-    };
-  }
-
   void _showEventDialog({Event? event}) {
     final nameCtrl = TextEditingController(text: event?.eventName ?? '');
     final descCtrl = TextEditingController(text: event?.description ?? '');
     final venueCtrl = TextEditingController(text: event?.venue ?? '');
-    String eventType = event?.eventType ?? 'AM_ONLY';
     DateTime eventDate = event?.date ?? DateTime.now();
     String coverImageBase64 = event?.bannerUrl ?? '';
-    bool showAdvanced = false;
 
     // Base scheduled times
     TimeOfDay? startTime = _parseTimeOfDay(event?.startTime);
     TimeOfDay? endTime = _parseTimeOfDay(event?.endTime);
-    TimeOfDay? morningTimeIn = _parseTimeOfDay(event?.morningTimeIn);
-    TimeOfDay? morningTimeOut = _parseTimeOfDay(event?.morningTimeOut);
-    TimeOfDay? afternoonTimeIn = _parseTimeOfDay(event?.afternoonTimeIn);
-    TimeOfDay? afternoonTimeOut = _parseTimeOfDay(event?.afternoonTimeOut);
+    
+    // Restored AM/PM times
+    TimeOfDay? mIn = _parseTimeOfDay(event?.morningTimeIn);
+    TimeOfDay? mOut = _parseTimeOfDay(event?.morningTimeOut);
+    TimeOfDay? aIn = _parseTimeOfDay(event?.afternoonTimeIn);
+    TimeOfDay? aOut = _parseTimeOfDay(event?.afternoonTimeOut);
 
-    // Gate override windows (pre-populate from event if available)
-    TimeOfDay? amInStart = _parseTimeOfDay(event?.amInStart);
-    TimeOfDay? amInEnd = _parseTimeOfDay(event?.amInEnd);
-    TimeOfDay? amOutStart = _parseTimeOfDay(event?.amOutStart);
-    TimeOfDay? amOutEnd = _parseTimeOfDay(event?.amOutEnd);
-    TimeOfDay? pmInStart = _parseTimeOfDay(event?.pmInStart);
-    TimeOfDay? pmInEnd = _parseTimeOfDay(event?.pmInEnd);
-    TimeOfDay? pmOutStart = _parseTimeOfDay(event?.pmOutStart);
-    TimeOfDay? pmOutEnd = _parseTimeOfDay(event?.pmOutEnd);
+    String eventType = 'Whole Day';
+    if (event != null) {
+      if (event.isWholeDay) eventType = 'Whole Day';
+      else if (event.isPmOnly) eventType = 'Afternoon';
+      else if (event.isAmOnly) eventType = 'Morning';
+    }
 
     String displayTime(TimeOfDay? t, BuildContext context) {
       return t == null ? 'Not set' : t.format(context);
@@ -450,24 +422,6 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDState) {
-          // Auto-generate gates whenever base times change
-          void autoGenerate() {
-            final gates = _computeGates(
-              morningTimeIn: morningTimeIn,
-              morningTimeOut: morningTimeOut,
-              afternoonTimeIn: afternoonTimeIn,
-              afternoonTimeOut: afternoonTimeOut,
-            );
-            amInStart = gates['amInStart'];
-            amInEnd = gates['amInEnd'];
-            amOutStart = gates['amOutStart'];
-            amOutEnd = gates['amOutEnd'];
-            pmInStart = gates['pmInStart'];
-            pmInEnd = gates['pmInEnd'];
-            pmOutStart = gates['pmOutStart'];
-            pmOutEnd = gates['pmOutEnd'];
-          }
-
           Widget timeTile(String label, TimeOfDay? val, VoidCallback onTap) =>
               ListTile(
                 contentPadding: EdgeInsets.zero,
@@ -608,7 +562,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                     Row(
                       children: [
                         Expanded(
-                          child: timeTile('Start Time', startTime, () async {
+                          child: timeTile('Overall Start', startTime, () async {
                             final t = await showTimePicker(
                               context: ctx,
                               initialTime: startTime ?? const TimeOfDay(hour: 8, minute: 0),
@@ -617,7 +571,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                           }),
                         ),
                         Expanded(
-                          child: timeTile('End Time', endTime, () async {
+                          child: timeTile('Overall End', endTime, () async {
                             final t = await showTimePicker(
                               context: ctx,
                               initialTime: endTime ?? const TimeOfDay(hour: 17, minute: 0),
@@ -627,269 +581,64 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                         ),
                       ],
                     ),
+                    const SizedBox(height: 16),
+                    const Divider(),
                     const SizedBox(height: 8),
-                    // Step 1 — Event Type Selector
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: TraceColors.offWhite,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: TraceColors.lightGrey),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Event Type',
-                            style: GoogleFonts.inter(
-                              fontSize: 12,
-                              color: TraceColors.medGrey,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: ['AM_ONLY', 'PM_ONLY', 'WHOLE_DAY'].map((
-                              t,
-                            ) {
-                              final labels = {
-                                'AM_ONLY': 'AM Only',
-                                'PM_ONLY': 'PM Only',
-                                'WHOLE_DAY': 'Whole Day',
-                              };
-                              final selected = eventType == t;
-                              return Expanded(
-                                child: GestureDetector(
-                                  onTap: () => setDState(() {
-                                    eventType = t;
-                                    autoGenerate();
-                                  }),
-                                  child: Container(
-                                    margin: const EdgeInsets.only(right: 4),
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 10,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: selected
-                                          ? TraceColors.navyBlue
-                                          : Colors.transparent,
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(
-                                        color: selected
-                                            ? TraceColors.navyBlue
-                                            : TraceColors.lightGrey,
-                                      ),
-                                    ),
-                                    child: Text(
-                                      labels[t]!,
-                                      textAlign: TextAlign.center,
-                                      style: GoogleFonts.inter(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                        color: selected
-                                            ? Colors.white
-                                            : TraceColors.medGrey,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              );
-                            }).toList(),
-                          ),
-                        ],
-                      ),
+                    DropdownButtonFormField<String>(
+                      value: eventType,
+                      items: const [
+                        DropdownMenuItem(value: 'Whole Day', child: Text('Whole Day Event')),
+                        DropdownMenuItem(value: 'Morning', child: Text('Morning Only')),
+                        DropdownMenuItem(value: 'Afternoon', child: Text('Afternoon Only')),
+                      ],
+                      onChanged: (val) {
+                        if (val != null) setDState(() => eventType = val);
+                      },
+                      decoration: const InputDecoration(labelText: 'Event Type'),
                     ),
-                    const SizedBox(height: 12),
-
-                    // Step 2 — Base Times
-                    if (eventType != 'PM_ONLY') ...[
-                      timeTile('Morning Time-In', morningTimeIn, () async {
-                        final t = await showTimePicker(
-                          context: ctx,
-                          initialTime: morningTimeIn ?? TimeOfDay.now(),
-                        );
-                        if (t != null) {
-                          setDState(() {
-                            morningTimeIn = t;
-                            autoGenerate();
-                          });
-                        }
-                      }),
-                      timeTile('Morning Time-Out', morningTimeOut, () async {
-                        final t = await showTimePicker(
-                          context: ctx,
-                          initialTime: morningTimeOut ?? TimeOfDay.now(),
-                        );
-                        if (t != null) {
-                          setDState(() {
-                            morningTimeOut = t;
-                            autoGenerate();
-                          });
-                        }
-                      }),
-                    ],
-                    if (eventType != 'AM_ONLY') ...[
-                      timeTile('Afternoon Time-In', afternoonTimeIn, () async {
-                        final t = await showTimePicker(
-                          context: ctx,
-                          initialTime: afternoonTimeIn ?? TimeOfDay.now(),
-                        );
-                        if (t != null) {
-                          setDState(() {
-                            afternoonTimeIn = t;
-                            autoGenerate();
-                          });
-                        }
-                      }),
-                      timeTile(
-                        'Afternoon Time-Out',
-                        afternoonTimeOut,
-                        () async {
-                          final t = await showTimePicker(
-                            context: ctx,
-                            initialTime: afternoonTimeOut ?? TimeOfDay.now(),
-                          );
-                          if (t != null) {
-                            setDState(() {
-                              afternoonTimeOut = t;
-                              autoGenerate();
-                            });
-                          }
-                        },
-                      ),
-                    ],
-                    const SizedBox(height: 8),
-
-                    // Step 4 — Advanced Override Toggle
-                    GestureDetector(
-                      onTap: () =>
-                          setDState(() => showAdvanced = !showAdvanced),
-                      child: Row(
-                        children: [
-                          Icon(
-                            showAdvanced
-                                ? Icons.expand_less_rounded
-                                : Icons.tune_rounded,
-                            size: 18,
-                            color: TraceColors.medGrey,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            'Adjust Scanning Windows',
-                            style: GoogleFonts.inter(
-                              fontSize: 13,
-                              color: TraceColors.medGrey,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (showAdvanced) ...[
+                    const SizedBox(height: 16),
+                    if (eventType == 'Whole Day' || eventType == 'Morning') ...[
+                      Text('Morning Session', style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: TraceColors.navyBlue)),
                       const SizedBox(height: 8),
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: TraceColors.offWhite,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: TraceColors.lightGrey),
-                        ),
-                        child: Column(
-                          children: [
-                            if (eventType != 'PM_ONLY') ...[
-                              Text(
-                                'AM In Window',
-                                style: GoogleFonts.inter(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 12,
-                                  color: TraceColors.navyBlue,
-                                ),
-                              ),
-                              timeTile('Opens at', amInStart, () async {
-                                final t = await showTimePicker(
-                                  context: ctx,
-                                  initialTime: amInStart ?? TimeOfDay.now(),
-                                );
-                                if (t != null) setDState(() => amInStart = t);
-                              }),
-                              timeTile('Closes at', amInEnd, () async {
-                                final t = await showTimePicker(
-                                  context: ctx,
-                                  initialTime: amInEnd ?? TimeOfDay.now(),
-                                );
-                                if (t != null) setDState(() => amInEnd = t);
-                              }),
-                              Text(
-                                'AM Out Window',
-                                style: GoogleFonts.inter(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 12,
-                                  color: TraceColors.navyBlue,
-                                ),
-                              ),
-                              timeTile('Opens at', amOutStart, () async {
-                                final t = await showTimePicker(
-                                  context: ctx,
-                                  initialTime: amOutStart ?? TimeOfDay.now(),
-                                );
-                                if (t != null) setDState(() => amOutStart = t);
-                              }),
-                              timeTile('Closes at', amOutEnd, () async {
-                                final t = await showTimePicker(
-                                  context: ctx,
-                                  initialTime: amOutEnd ?? TimeOfDay.now(),
-                                );
-                                if (t != null) setDState(() => amOutEnd = t);
-                              }),
-                            ],
-                            if (eventType != 'AM_ONLY') ...[
-                              Text(
-                                'PM In Window',
-                                style: GoogleFonts.inter(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 12,
-                                  color: TraceColors.navyBlue,
-                                ),
-                              ),
-                              timeTile('Opens at', pmInStart, () async {
-                                final t = await showTimePicker(
-                                  context: ctx,
-                                  initialTime: pmInStart ?? TimeOfDay.now(),
-                                );
-                                if (t != null) setDState(() => pmInStart = t);
-                              }),
-                              timeTile('Closes at', pmInEnd, () async {
-                                final t = await showTimePicker(
-                                  context: ctx,
-                                  initialTime: pmInEnd ?? TimeOfDay.now(),
-                                );
-                                if (t != null) setDState(() => pmInEnd = t);
-                              }),
-                              Text(
-                                'PM Out Window',
-                                style: GoogleFonts.inter(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 12,
-                                  color: TraceColors.navyBlue,
-                                ),
-                              ),
-                              timeTile('Opens at', pmOutStart, () async {
-                                final t = await showTimePicker(
-                                  context: ctx,
-                                  initialTime: pmOutStart ?? TimeOfDay.now(),
-                                );
-                                if (t != null) setDState(() => pmOutStart = t);
-                              }),
-                              timeTile('Closes at', pmOutEnd, () async {
-                                final t = await showTimePicker(
-                                  context: ctx,
-                                  initialTime: pmOutEnd ?? TimeOfDay.now(),
-                                );
-                                if (t != null) setDState(() => pmOutEnd = t);
-                              }),
-                            ],
-                          ],
-                        ),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: timeTile('Morning In', mIn, () async {
+                              final t = await showTimePicker(context: ctx, initialTime: mIn ?? const TimeOfDay(hour: 8, minute: 0));
+                              if (t != null) setDState(() => mIn = t);
+                            }),
+                          ),
+                          Expanded(
+                            child: timeTile('Morning Out', mOut, () async {
+                              final t = await showTimePicker(context: ctx, initialTime: mOut ?? const TimeOfDay(hour: 12, minute: 0));
+                              if (t != null) setDState(() => mOut = t);
+                            }),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    if (eventType == 'Whole Day' || eventType == 'Afternoon') ...[
+                      Text('Afternoon Session', style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: TraceColors.navyBlue)),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: timeTile('Afternoon In', aIn, () async {
+                              final t = await showTimePicker(context: ctx, initialTime: aIn ?? const TimeOfDay(hour: 13, minute: 0));
+                              if (t != null) setDState(() => aIn = t);
+                            }),
+                          ),
+                          Expanded(
+                            child: timeTile('Afternoon Out', aOut, () async {
+                              final t = await showTimePicker(context: ctx, initialTime: aOut ?? const TimeOfDay(hour: 17, minute: 0));
+                              if (t != null) setDState(() => aOut = t);
+                            }),
+                          ),
+                        ],
                       ),
                     ],
+                    const SizedBox(height: 16),
                   ],
                 ),
               ),
@@ -903,12 +652,6 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                 label: event == null ? 'Create' : 'Save',
                 onPressed: () async {
                   if (nameCtrl.text.trim().isEmpty) return;
-                  final gates = _computeGates(
-                    morningTimeIn: morningTimeIn,
-                    morningTimeOut: morningTimeOut,
-                    afternoonTimeIn: afternoonTimeIn,
-                    afternoonTimeOut: afternoonTimeOut,
-                  );
                   final data = {
                     'event_name': nameCtrl.text.trim(),
                     'description': descCtrl.text.trim(),
@@ -916,41 +659,15 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                     'date': eventDate,
                     'start_time': _formatTimeOfDay(startTime),
                     'end_time': _formatTimeOfDay(endTime),
-                    'event_type': eventType,
+                    'is_whole_day': eventType == 'Whole Day',
+                    'is_pm_only': eventType == 'Afternoon',
+                    'is_am_only': eventType == 'Morning',
+                    'morning_time_in': (eventType == 'Whole Day' || eventType == 'Morning') ? _formatTimeOfDay(mIn) : null,
+                    'morning_time_out': (eventType == 'Whole Day' || eventType == 'Morning') ? _formatTimeOfDay(mOut) : null,
+                    'afternoon_time_in': (eventType == 'Whole Day' || eventType == 'Afternoon') ? _formatTimeOfDay(aIn) : null,
+                    'afternoon_time_out': (eventType == 'Whole Day' || eventType == 'Afternoon') ? _formatTimeOfDay(aOut) : null,
                     'banner_url': coverImageBase64,
                     'status': event?.status ?? 'upcoming',
-                    'morning_time_in': eventType != 'PM_ONLY'
-                        ? _formatTimeOfDay(morningTimeIn)
-                        : null,
-                    'morning_time_out': eventType != 'PM_ONLY'
-                        ? _formatTimeOfDay(morningTimeOut)
-                        : null,
-                    'afternoon_time_in': eventType != 'AM_ONLY'
-                        ? _formatTimeOfDay(afternoonTimeIn)
-                        : null,
-                    'afternoon_time_out': eventType != 'AM_ONLY'
-                        ? _formatTimeOfDay(afternoonTimeOut)
-                        : null,
-                    'am_in_start': _formatTimeOfDay(
-                      amInStart ?? gates['amInStart'],
-                    ),
-                    'am_in_end': _formatTimeOfDay(amInEnd ?? gates['amInEnd']),
-                    'am_out_start': _formatTimeOfDay(
-                      amOutStart ?? gates['amOutStart'],
-                    ),
-                    'am_out_end': _formatTimeOfDay(
-                      amOutEnd ?? gates['amOutEnd'],
-                    ),
-                    'pm_in_start': _formatTimeOfDay(
-                      pmInStart ?? gates['pmInStart'],
-                    ),
-                    'pm_in_end': _formatTimeOfDay(pmInEnd ?? gates['pmInEnd']),
-                    'pm_out_start': _formatTimeOfDay(
-                      pmOutStart ?? gates['pmOutStart'],
-                    ),
-                    'pm_out_end': _formatTimeOfDay(
-                      pmOutEnd ?? gates['pmOutEnd'],
-                    ),
                   };
                   if (event == null) {
                     await EventService.createEvent(data);
@@ -1976,11 +1693,13 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
               color: TraceColors.navyBlue,
             ),
           ),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                DropdownButtonFormField<String>(
+          content: SizedBox(
+            width: 500,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  DropdownButtonFormField<String>(
                   initialValue: type,
                   decoration: const InputDecoration(labelText: 'Type'),
                   items: const [
@@ -2132,6 +1851,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                       ),
               ],
             ),
+          ),
           ),
           actions: [
             TextButton(

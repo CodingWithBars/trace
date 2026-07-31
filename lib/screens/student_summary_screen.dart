@@ -8,6 +8,9 @@ import '../widgets/shared_widgets.dart';
 import '../services/student_service.dart';
 import '../models/student.dart';
 import '../models/attendance.dart';
+import '../models/event.dart';
+import '../services/event_service.dart';
+import 'package:intl/intl.dart';
 import 'dart:convert';
 
 class StudentSummaryScreen extends ConsumerStatefulWidget {
@@ -21,6 +24,7 @@ class StudentSummaryScreen extends ConsumerStatefulWidget {
 class _StudentSummaryScreenState extends ConsumerState<StudentSummaryScreen> {
   Student? _student;
   List<Attendance> _attendance = [];
+  Map<String, Event> _events = {};
   bool _isLoading = true;
   String? _error;
 
@@ -45,14 +49,18 @@ class _StudentSummaryScreenState extends ConsumerState<StudentSummaryScreen> {
       
       final attendanceList = await StudentService.getAttendanceForStudent(student.id);
       
+      final events = await EventService.getAllEvents();
+      final eventMap = {for (var e in events) e.id: e};
+      
       if (mounted) {
         setState(() {
           _student = student;
           _attendance = attendanceList;
+          _events = eventMap;
         });
       }
     } catch (e) {
-      if (mounted) setState(() => _error = 'Failed to load records.');
+      if (mounted) setState(() => _error = 'Failed to load records: $e');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -181,33 +189,165 @@ class _StudentSummaryScreenState extends ConsumerState<StudentSummaryScreen> {
       ),
       const SizedBox(height: 24),
       
-      Row(
-        children: [
-          const Icon(Icons.history_rounded, color: TraceColors.navyBlue, size: 20),
-          const SizedBox(width: 8),
-          Text('Attendance History', style: GoogleFonts.inter(
-            fontSize: 16, fontWeight: FontWeight.w700, color: TraceColors.navyBlue,
-          )),
-          const Spacer(),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: TraceColors.gold.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text('${_attendance.length} Records', style: GoogleFonts.inter(
-              fontSize: 12, fontWeight: FontWeight.w700, color: TraceColors.navyBlue,
-            )),
-          ),
-        ],
-      ),
-      const SizedBox(height: 16),
+      _buildStatsTriangle(),
+      const SizedBox(height: 24),
       
       if (_attendance.isEmpty)
         _buildEmptyState()
       else
         ..._attendance.map((a) => _attendanceTile(a)),
     ]);
+  }
+
+  (Duration, Duration, Duration) _calculateDurations(Attendance a, Event? event) {
+    if (event == null) return (Duration.zero, Duration.zero, Duration.zero);
+
+    Duration totalEventDuration = Duration.zero;
+    if (event.startTime != null && event.endTime != null && event.startTime!.isNotEmpty && event.endTime!.isNotEmpty) {
+      try {
+        final start = DateFormat('HH:mm').parse(event.startTime!);
+        final end = DateFormat('HH:mm').parse(event.endTime!);
+        totalEventDuration = end.difference(start);
+        if (totalEventDuration.isNegative) totalEventDuration += const Duration(hours: 24);
+
+        if (event.isWholeDay && event.morningTimeOut != null && event.afternoonTimeIn != null) {
+          try {
+            final mOut = DateFormat('HH:mm').parse(event.morningTimeOut!);
+            final aIn = DateFormat('HH:mm').parse(event.afternoonTimeIn!);
+            Duration breakDuration = aIn.difference(mOut);
+            if (!breakDuration.isNegative && breakDuration < totalEventDuration) {
+              totalEventDuration -= breakDuration;
+            }
+          } catch (_) {}
+        }
+      } catch (_) {}
+    }
+
+    DateTime now = DateTime.now();
+    DateTime eventDate = event.date;
+
+    DateTime? parseTime(String? tStr) {
+      if (tStr == null || tStr.isEmpty) return null;
+      try {
+        final t = DateFormat('h:mm a').parse(tStr);
+        return DateTime(eventDate.year, eventDate.month, eventDate.day, t.hour, t.minute);
+      } catch (_) {
+        try {
+          final t = DateFormat('HH:mm').parse(tStr);
+          return DateTime(eventDate.year, eventDate.month, eventDate.day, t.hour, t.minute);
+        } catch (_) {
+          return null;
+        }
+      }
+    }
+
+    DateTime? amEnd = parseTime(event.morningTimeOut ?? event.endTime);
+    DateTime? pmEnd = parseTime(event.afternoonTimeOut ?? event.endTime);
+
+    Duration amCompleted = Duration.zero;
+    if (a.timeInAm != null) {
+      if (a.timeOutAm != null) {
+        amCompleted = a.timeOutAm!.difference(a.timeInAm!);
+      } else {
+        if (amEnd != null && now.isAfter(amEnd)) {
+          amCompleted = Duration.zero;
+        } else {
+          amCompleted = now.difference(a.timeInAm!);
+        }
+      }
+    }
+    if (amCompleted.isNegative) amCompleted = Duration.zero;
+
+    Duration pmCompleted = Duration.zero;
+    if (a.timeInPm != null) {
+      if (a.timeOutPm != null) {
+        pmCompleted = a.timeOutPm!.difference(a.timeInPm!);
+      } else {
+        if (pmEnd != null && now.isAfter(pmEnd)) {
+          pmCompleted = Duration.zero;
+        } else {
+          pmCompleted = now.difference(a.timeInPm!);
+        }
+      }
+    }
+    if (pmCompleted.isNegative) pmCompleted = Duration.zero;
+
+    Duration completedDuration = amCompleted + pmCompleted;
+    Duration missedDuration = totalEventDuration - completedDuration;
+    if (missedDuration.isNegative) missedDuration = Duration.zero;
+
+    return (totalEventDuration, completedDuration, missedDuration);
+  }
+
+  Widget _buildStatsTriangle() {
+    Duration totalEventDurationAll = Duration.zero;
+    Duration completedDurationAll = Duration.zero;
+    Duration missedDurationAll = Duration.zero;
+
+    for (final a in _attendance) {
+      final event = _events[a.eventId];
+      if (event == null) continue;
+
+      final (total, completed, missed) = _calculateDurations(a, event);
+      totalEventDurationAll += total;
+      completedDurationAll += completed;
+      missedDurationAll += missed;
+    }
+
+    String fmt(Duration d) {
+      final h = d.inHours;
+      final m = d.inMinutes.remainder(60);
+      return '${h}h ${m}m';
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+      decoration: BoxDecoration(
+        color: TraceColors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: TraceColors.lightGrey.withValues(alpha: 0.5)),
+        boxShadow: [
+          BoxShadow(
+            color: TraceColors.navyBlue.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Expanded(
+            child: Column(
+              children: [
+                Text(fmt(totalEventDurationAll), style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: TraceColors.gold)),
+                const SizedBox(height: 4),
+                Text('Total Event', textAlign: TextAlign.center, style: GoogleFonts.inter(fontSize: 11, color: TraceColors.medGrey)),
+              ],
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Column(
+              children: [
+                Text(fmt(completedDurationAll), style: GoogleFonts.inter(fontSize: 26, fontWeight: FontWeight.w900, color: TraceColors.success)),
+                const SizedBox(height: 4),
+                Text('Completed', textAlign: TextAlign.center, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold, color: TraceColors.navyBlue)),
+              ],
+            ),
+          ),
+          Expanded(
+            child: Column(
+              children: [
+                Text(fmt(missedDurationAll), style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: TraceColors.error)),
+                const SizedBox(height: 4),
+                Text('Missed', textAlign: TextAlign.center, style: GoogleFonts.inter(fontSize: 11, color: TraceColors.medGrey)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _attendanceTile(Attendance a) {
@@ -257,6 +397,10 @@ class _StudentSummaryScreenState extends ConsumerState<StudentSummaryScreen> {
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (ctx) {
+        final event = _events[a.eventId];
+        
+        final (totalEventDuration, completedDuration, missedDuration) = _calculateDurations(a, event);
+
         return Container(
           padding: const EdgeInsets.all(24),
           decoration: const BoxDecoration(
@@ -279,27 +423,50 @@ class _StudentSummaryScreenState extends ConsumerState<StudentSummaryScreen> {
                 ],
               ),
               const SizedBox(height: 24),
-              if (a.timeInAm != null || a.timeOutAm != null) ...[
-                Text('Morning Session', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: TraceColors.navyBlue)),
+              if (a.timeInAm != null || a.timeOutAm != null || a.timeInPm != null || a.timeOutPm != null) ...[
+                Text('Attendance Logs', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: TraceColors.navyBlue)),
                 const SizedBox(height: 8),
-                _buildTimeRow('Time-In:', a.timeInAm),
-                _buildTimeRow('Time-Out:', a.timeOutAm),
-                const SizedBox(height: 16),
-              ],
-              if (a.timeInPm != null || a.timeOutPm != null) ...[
-                Text('Afternoon Session', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: TraceColors.navyBlue)),
-                const SizedBox(height: 8),
-                _buildTimeRow('Time-In:', a.timeInPm),
-                _buildTimeRow('Time-Out:', a.timeOutPm),
+                if (event?.isWholeDay == true || event?.isAmOnly == true) ...[
+                  _buildTimeRow('Morning In:', a.timeInAm),
+                  _buildTimeRow('Morning Out:', a.timeOutAm),
+                ],
+                if (event?.isWholeDay == true || event?.isPmOnly == true) ...[
+                  _buildTimeRow('Afternoon In:', a.timeInPm),
+                  _buildTimeRow('Afternoon Out:', a.timeOutPm),
+                ],
                 const SizedBox(height: 16),
               ],
               if (a.timeInAm == null && a.timeOutAm == null && a.timeInPm == null && a.timeOutPm == null)
                 Text('No time records available.', style: GoogleFonts.inter(fontSize: 14, color: TraceColors.medGrey)),
               const SizedBox(height: 16),
+              const Divider(color: TraceColors.lightGrey),
+              const SizedBox(height: 16),
+              Text('Duration Summary', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: TraceColors.navyBlue)),
+              const SizedBox(height: 12),
+              _buildDurationRow('Total Event Duration:', totalEventDuration, TraceColors.medGrey),
+              _buildDurationRow('Completed Hours:', completedDuration, TraceColors.success),
+              _buildDurationRow('Missed Hours:', missedDuration, TraceColors.error),
+              const SizedBox(height: 16),
             ],
           ),
         );
       }
+    );
+  }
+
+  Widget _buildDurationRow(String label, Duration duration, Color color) {
+    final hours = duration.inHours;
+    final mins = duration.inMinutes.remainder(60);
+    final text = '${hours}h ${mins}m';
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: GoogleFonts.inter(fontSize: 14, color: TraceColors.medGrey)),
+          Text(text, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: color)),
+        ],
+      ),
     );
   }
 
