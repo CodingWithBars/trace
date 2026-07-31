@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "659475939688",
+    "project_id": "trace-1bc3a",
+    "storage_bucket": "trace-1bc3a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:659475939688:android:1855593525c30b759116dd",
+        "android_client_info": {
+          "package_name": "com.example.trace"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAPInSw-9wNTMwN5HLC2704kXgal0ReaUw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
