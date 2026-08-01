@@ -24,7 +24,9 @@ class ScannerScreen extends StatefulWidget {
 }
 
 class _ScannerScreenState extends State<ScannerScreen> with TickerProviderStateMixin {
-  final MobileScannerController _controller = MobileScannerController();
+  final MobileScannerController _controller = MobileScannerController(
+    facing: CameraFacing.back,
+  );
   late AnimationController _scanLineController;
   late Animation<double> _scanLineAnim;
 

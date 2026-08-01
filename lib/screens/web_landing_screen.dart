@@ -83,11 +83,15 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
           ),
           const Spacer(),
           if (isWide) ...[
-            _navLink(context, 'Events', '#events'),
+            _navLink(context, 'Events', anchor: '#events'),
             const SizedBox(width: 28),
-            _navLink(context, 'Announcements', '#announcements'),
+            _navLink(context, 'Announcements', anchor: '#announcements'),
             const SizedBox(width: 28),
-            _navLink(context, 'Ledger', '#ledger'),
+            _navLink(context, 'Ledger', anchor: '#ledger'),
+            const SizedBox(width: 28),
+            _navLink(context, 'Login', route: '/student-login'),
+            const SizedBox(width: 28),
+            _navLink(context, 'Register', route: '/register'),
             const SizedBox(width: 28),
           ],
           _downloadButton(small: !isWide),
@@ -96,11 +100,15 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
     );
   }
 
-  Widget _navLink(BuildContext context, String label, String anchor) {
+  Widget _navLink(BuildContext context, String label, {String? anchor, String? route}) {
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
-        onTap: () {}, // anchor scroll – handled via scroll controller if needed
+        onTap: () {
+          if (route != null) {
+            context.go(route);
+          }
+        },
         child: Text(
           label,
           style: GoogleFonts.inter(
@@ -272,6 +280,48 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
           spacing: 16,
           runSpacing: 12,
           children: [
+            MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: GestureDetector(
+                onTap: () => context.go('/student-login'),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 28,
+                    vertical: 16,
+                  ),
+                  decoration: BoxDecoration(
+                    color: TraceColors.gold,
+                    borderRadius: BorderRadius.circular(14),
+                    boxShadow: [
+                      BoxShadow(
+                        color: TraceColors.gold.withValues(alpha: 0.3),
+                        blurRadius: 15,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.login_rounded,
+                        color: TraceColors.navyBlue,
+                        size: 22,
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        'Student Login',
+                        style: GoogleFonts.inter(
+                          color: TraceColors.navyBlue,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 15,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
             MouseRegion(
               cursor: SystemMouseCursors.click,
               child: GestureDetector(
