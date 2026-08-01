@@ -297,7 +297,7 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
                       ),
                       const SizedBox(width: 10),
                       Text(
-                        'Download Android APK',
+                        'Download trace now!',
                         style: GoogleFonts.inter(
                           color: const Color(0xFF0D1B3E),
                           fontWeight: FontWeight.w800,
