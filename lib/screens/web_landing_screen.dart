@@ -47,6 +47,7 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
             children: [
               _buildNavbar(context),
               _buildHero(context),
+              _buildHowToRegisterSection(context),
               _buildStatsBar(),
               _buildEventsSection(),
               _buildAnnouncementsSection(),
@@ -206,15 +207,18 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
                         child: _buildHeroContent(context, isWide: true),
                       ),
                       const SizedBox(width: 60),
-                      Expanded(flex: 4, child: _buildHeroEventPreview()),
+                      Expanded(
+                        flex: 4, 
+                        child: Image.asset('assets/hero-image.png', fit: BoxFit.contain),
+                      ),
                     ],
                   )
                 : Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      _buildHeroContent(context, isWide: false),
+                      Image.asset('assets/hero-image.png', fit: BoxFit.contain),
                       const SizedBox(height: 48),
-                      _buildHeroEventPreview(),
+                      _buildHeroContent(context, isWide: false),
                     ],
                   ),
           ),
@@ -239,10 +243,11 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
 
   Widget _buildHeroContent(BuildContext context, {required bool isWide}) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: isWide ? CrossAxisAlignment.start : CrossAxisAlignment.center,
       children: [
         Text(
           'Transparent Records\n& Attendance for\nCampus Events',
+          textAlign: isWide ? TextAlign.left : TextAlign.center,
           style: GoogleFonts.inter(
             fontSize: isWide ? 52 : 34,
             fontWeight: FontWeight.w900,
@@ -253,6 +258,7 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
         const SizedBox(height: 20),
         Text(
           'A modern, real-time system for student attendance tracking,\nevent management, and full financial transparency.',
+          textAlign: isWide ? TextAlign.left : TextAlign.center,
           style: GoogleFonts.inter(
             fontSize: isWide ? 16 : 14,
             color: Colors.white.withValues(alpha: 0.65),
@@ -262,6 +268,7 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
         const SizedBox(height: 40),
         // CTA Buttons
         Wrap(
+          alignment: isWide ? WrapAlignment.start : WrapAlignment.center,
           spacing: 16,
           runSpacing: 12,
           children: [
@@ -314,6 +321,7 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
         const SizedBox(height: 20),
         // Feature pills
         Wrap(
+          alignment: isWide ? WrapAlignment.start : WrapAlignment.center,
           spacing: 10,
           runSpacing: 8,
           children: [
@@ -355,161 +363,88 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
     );
   }
 
-  Widget _buildHeroEventPreview() {
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('events')
-          .where('status', whereIn: ['upcoming', 'ongoing'])
-          .orderBy('date')
-          .limit(2)
-          .snapshots(),
-      builder: (ctx, snap) {
-        if (!snap.hasData || snap.data!.docs.isEmpty) {
-          return _emptyEventCard();
-        }
 
-        final docs = snap.data!.docs;
-        return Column(
-          children: docs.map((doc) {
-            final data = doc.data() as Map<String, dynamic>;
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 16),
-              child: _heroEventCard(data),
-            );
-          }).toList(),
-        );
-      },
-    );
-  }
 
-  Widget _emptyEventCard() {
+  // ─── HOW TO REGISTER ───────────────────────────────────────────────────────
+
+  Widget _buildHowToRegisterSection(BuildContext context) {
+    final isWide = MediaQuery.of(context).size.width > 700;
+    final hPad = isWide ? 80.0 : 24.0;
     return Container(
-      padding: const EdgeInsets.all(32),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: TraceColors.gold.withValues(alpha: 0.2)),
-      ),
-      child: Center(
-        child: Text(
-          'No upcoming events.',
-          style: GoogleFonts.inter(
-            color: Colors.white.withValues(alpha: 0.4),
-            fontSize: 14,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _heroEventCard(Map<String, dynamic> data) {
-    final event = Event.fromMap(data, '');
-    final isOngoing = event.status == 'ongoing';
-    final statusColor = isOngoing
-        ? const Color(0xFFFFD700)
-        : const Color(0xFF4FC3F7);
-    final statusLabel = isOngoing ? 'ONGOING' : 'UPCOMING';
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.07),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: statusColor.withValues(alpha: 0.3)),
-      ),
-      clipBehavior: Clip.hardEdge,
+      color: TraceColors.white,
+      padding: const EdgeInsets.symmetric(vertical: 64),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (event.bannerUrl.isNotEmpty)
-            AspectRatio(
-              aspectRatio: 16 / 7,
-              child: _buildBannerImage(event.bannerUrl),
-            ),
           Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: statusColor.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(
-                          color: statusColor.withValues(alpha: 0.5),
-                        ),
-                      ),
-                      child: Text(
-                        statusLabel,
-                        style: GoogleFonts.inter(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w800,
-                          color: statusColor,
-                          letterSpacing: 1,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  event.eventName,
-                  style: GoogleFonts.inter(
-                    color: Colors.white,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                    height: 1.3,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                if (event.venue.isNotEmpty) ...[
-                  const SizedBox(height: 6),
-                  Row(
+            padding: EdgeInsets.symmetric(horizontal: hPad),
+            child: _sectionHeader('How to Register & Get Your QR Code', TraceColors.navyBlue),
+          ),
+          const SizedBox(height: 12),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: hPad),
+            child: Text(
+              'Follow these 5 simple steps to register your account and generate your official Trace QR Code.',
+              style: GoogleFonts.inter(
+                color: TraceColors.medGrey,
+                fontSize: 15,
+              ),
+            ),
+          ),
+          const SizedBox(height: 48),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: EdgeInsets.symmetric(horizontal: hPad),
+            child: Row(
+              children: List.generate(5, (index) {
+                final stepNum = index + 1;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 32),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      const Icon(
-                        Icons.location_on,
-                        color: TraceColors.gold,
-                        size: 12,
+                      Container(
+                        height: 500, // Fixed height for screenshots
+                        decoration: BoxDecoration(
+                          color: TraceColors.offWhite,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.08),
+                              blurRadius: 20,
+                              offset: const Offset(0, 8),
+                            ),
+                          ],
+                          border: Border.all(color: TraceColors.lightGrey.withValues(alpha: 0.5)),
+                        ),
+                        clipBehavior: Clip.hardEdge,
+                        child: Image.asset(
+                          'assets/$stepNum.png',
+                          fit: BoxFit.contain,
+                        ),
                       ),
-                      const SizedBox(width: 4),
-                      Flexible(
+                      const SizedBox(height: 20),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: TraceColors.gold.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(100),
+                          border: Border.all(color: TraceColors.gold.withValues(alpha: 0.5)),
+                        ),
                         child: Text(
-                          event.venue,
+                          'STEP $stepNum',
                           style: GoogleFonts.inter(
-                            color: Colors.white.withValues(alpha: 0.7),
-                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 13,
+                            color: TraceColors.navyBlue,
+                            letterSpacing: 1,
                           ),
-                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
                   ),
-                ],
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.calendar_today,
-                      color: Color(0xFF4FC3F7),
-                      size: 12,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      _formatDate(event.date),
-                      style: GoogleFonts.inter(
-                        color: Colors.white.withValues(alpha: 0.6),
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+                );
+              }),
             ),
           ),
         ],
