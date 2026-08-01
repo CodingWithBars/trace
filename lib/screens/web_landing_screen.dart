@@ -284,40 +284,43 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
               cursor: SystemMouseCursors.click,
               child: GestureDetector(
                 onTap: () => context.go('/student-login'),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 28,
-                    vertical: 16,
-                  ),
-                  decoration: BoxDecoration(
-                    color: TraceColors.gold,
-                    borderRadius: BorderRadius.circular(14),
-                    boxShadow: [
-                      BoxShadow(
-                        color: TraceColors.gold.withValues(alpha: 0.3),
-                        blurRadius: 15,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.login_rounded,
-                        color: TraceColors.navyBlue,
-                        size: 22,
-                      ),
-                      const SizedBox(width: 10),
-                      Text(
-                        'Student Login',
-                        style: GoogleFonts.inter(
-                          color: TraceColors.navyBlue,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 15,
+                child: SizedBox(
+                  width: 250,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 28,
+                      vertical: 16,
+                    ),
+                    decoration: BoxDecoration(
+                      color: TraceColors.gold,
+                      borderRadius: BorderRadius.circular(14),
+                      boxShadow: [
+                        BoxShadow(
+                          color: TraceColors.gold.withValues(alpha: 0.3),
+                          blurRadius: 15,
+                          offset: const Offset(0, 6),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.login_rounded,
+                          color: TraceColors.navyBlue,
+                          size: 22,
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          'Student Login',
+                          style: GoogleFonts.inter(
+                            color: TraceColors.navyBlue,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -326,42 +329,45 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
               cursor: SystemMouseCursors.click,
               child: GestureDetector(
                 onTap: _launchApkDownload,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 28,
-                    vertical: 16,
-                  ),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFFFD700), Color(0xFFF5A623)],
+                child: SizedBox(
+                  width: 250,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 28,
+                      vertical: 16,
                     ),
-                    borderRadius: BorderRadius.circular(14),
-                    boxShadow: [
-                      BoxShadow(
-                        color: TraceColors.gold.withValues(alpha: 0.4),
-                        blurRadius: 20,
-                        offset: const Offset(0, 6),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFFFD700), Color(0xFFF5A623)],
                       ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.android_rounded,
-                        color: Color(0xFF0D1B3E),
-                        size: 22,
-                      ),
-                      const SizedBox(width: 10),
-                      Text(
-                        'Download trace now!',
-                        style: GoogleFonts.inter(
-                          color: const Color(0xFF0D1B3E),
-                          fontWeight: FontWeight.w800,
-                          fontSize: 15,
+                      borderRadius: BorderRadius.circular(14),
+                      boxShadow: [
+                        BoxShadow(
+                          color: TraceColors.gold.withValues(alpha: 0.4),
+                          blurRadius: 20,
+                          offset: const Offset(0, 6),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.android_rounded,
+                          color: Color(0xFF0D1B3E),
+                          size: 22,
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          'Download trace now!',
+                          style: GoogleFonts.inter(
+                            color: const Color(0xFF0D1B3E),
+                            fontWeight: FontWeight.w800,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
