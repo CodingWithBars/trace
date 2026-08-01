@@ -16,20 +16,20 @@ import '../../services/activity_log_service.dart';
 import '../../models/event.dart';
 import 'package:printing/printing.dart';
 import 'package:intl/intl.dart';
-import 'tabs/overview_tab.dart';
-import 'tabs/events_tab.dart';
+import '../admin/tabs/overview_tab.dart';
+import '../admin/tabs/events_tab.dart';
 import '../event_details_full_screen.dart';
-import 'tabs/announcements_tab.dart';
+import '../admin/tabs/announcements_tab.dart';
 
-class AdminDashboardScreen extends ConsumerStatefulWidget {
-  const AdminDashboardScreen({super.key});
+class WebAdminDashboardScreen extends ConsumerStatefulWidget {
+  const WebAdminDashboardScreen({super.key});
 
   @override
-  ConsumerState<AdminDashboardScreen> createState() =>
-      _AdminDashboardScreenState();
+  ConsumerState<WebAdminDashboardScreen> createState() =>
+      _WebAdminDashboardScreenState();
 }
 
-class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
+class _WebAdminDashboardScreenState extends ConsumerState<WebAdminDashboardScreen> {
   int _selectedIndex = 0;
   String _fundSearchQuery = '';
   String _fundSortOption = 'Newest';
