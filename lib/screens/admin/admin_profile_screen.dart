@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+
 import '../../theme/app_theme.dart';
 import '../../widgets/shared_widgets.dart';
 import '../../services/auth_service.dart';
@@ -115,6 +115,7 @@ class _AdminProfileScreenState extends ConsumerState<AdminProfileScreen> {
           entityId: uid,
           actorName: _adminName ?? 'Admin',
         );
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Verification email sent. Please check your inbox before logging in again.')),
         );
@@ -149,6 +150,7 @@ class _AdminProfileScreenState extends ConsumerState<AdminProfileScreen> {
           entityId: uid,
           actorName: _adminName ?? 'Admin',
         );
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Password updated successfully!')),
         );
