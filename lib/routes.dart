@@ -30,6 +30,7 @@ import 'screens/web/web_registration_screen.dart';
 import 'screens/web/web_student_id_screen.dart';
 import 'screens/web/web_student_summary_screen.dart';
 import 'screens/web/web_admin_dashboard_screen.dart';
+import 'screens/web/web_scanner_screen.dart';
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/',
@@ -77,7 +78,7 @@ final routerProvider = Provider<GoRouter>((ref) {
     GoRoute(path: '/admin/logs', builder: (context, state) => const ActivityLogsScreen()),
     GoRoute(path: '/admin/manage_admins', builder: (context, state) => const ManageAdminsScreen()),
     GoRoute(path: '/admin/profile', builder: (context, state) => const AdminProfileScreen()),
-    GoRoute(path: '/scanner', builder: (context, state) => const ScannerScreen()),
+    GoRoute(path: '/scanner', builder: (context, state) => kIsWeb ? const WebScannerScreen() : const ScannerScreen()),
   ],
   );
 });

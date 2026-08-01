@@ -82,25 +82,18 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
             ),
           ),
           const Spacer(),
-          if (isWide) ...[
-            _navLink(context, 'Events', anchor: '#events'),
-            const SizedBox(width: 28),
-            _navLink(context, 'Announcements', anchor: '#announcements'),
-            const SizedBox(width: 28),
-            _navLink(context, 'Ledger', anchor: '#ledger'),
-            const SizedBox(width: 28),
-            _navLink(context, 'Login', route: '/student-login'),
-            const SizedBox(width: 28),
-            _navLink(context, 'Register', route: '/register'),
-            const SizedBox(width: 28),
-          ],
-          _downloadButton(small: !isWide),
+          _registerButton(context, small: !isWide),
         ],
       ),
     );
   }
 
-  Widget _navLink(BuildContext context, String label, {String? anchor, String? route}) {
+  Widget _navLink(
+    BuildContext context,
+    String label, {
+    String? anchor,
+    String? route,
+  }) {
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
@@ -121,11 +114,11 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
     );
   }
 
-  Widget _downloadButton({bool small = false}) {
+  Widget _registerButton(BuildContext context, {bool small = false}) {
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
-        onTap: _launchApkDownload,
+        onTap: () => context.go('/register'),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
           padding: EdgeInsets.symmetric(
@@ -149,13 +142,13 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               const Icon(
-                Icons.android_rounded,
+                Icons.person_add_rounded,
                 size: 16,
                 color: Color(0xFF0D1B3E),
               ),
               SizedBox(width: small ? 4 : 6),
               Text(
-                small ? 'Download' : 'Download APK',
+                'Register',
                 style: GoogleFonts.inter(
                   color: const Color(0xFF0D1B3E),
                   fontWeight: FontWeight.w800,
@@ -216,8 +209,11 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
                       ),
                       const SizedBox(width: 60),
                       Expanded(
-                        flex: 4, 
-                        child: Image.asset('assets/hero-image.png', fit: BoxFit.contain),
+                        flex: 4,
+                        child: Image.asset(
+                          'assets/hero-image.png',
+                          fit: BoxFit.contain,
+                        ),
                       ),
                     ],
                   )
@@ -251,7 +247,9 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
 
   Widget _buildHeroContent(BuildContext context, {required bool isWide}) {
     return Column(
-      crossAxisAlignment: isWide ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+      crossAxisAlignment: isWide
+          ? CrossAxisAlignment.start
+          : CrossAxisAlignment.center,
       children: [
         Text(
           'Transparent Records\n& Attendance for\nCampus Events',
@@ -312,7 +310,7 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
                         ),
                         const SizedBox(width: 10),
                         Text(
-                          'Student Login',
+                          'Login',
                           style: GoogleFonts.inter(
                             color: TraceColors.navyBlue,
                             fontWeight: FontWeight.w800,
@@ -358,12 +356,15 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
                           size: 22,
                         ),
                         const SizedBox(width: 10),
-                        Text(
-                          'Download trace now!',
-                          style: GoogleFonts.inter(
-                            color: const Color(0xFF0D1B3E),
-                            fontWeight: FontWeight.w800,
-                            fontSize: 15,
+                        Expanded(
+                          child: Text(
+                            'Download trace',
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.inter(
+                              color: const Color(0xFF0D1B3E),
+                              fontWeight: FontWeight.w800,
+                              fontSize: 15,
+                            ),
                           ),
                         ),
                       ],
@@ -419,8 +420,6 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
     );
   }
 
-
-
   // ─── HOW TO REGISTER ───────────────────────────────────────────────────────
 
   Widget _buildHowToRegisterSection(BuildContext context) {
@@ -434,7 +433,10 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
         children: [
           Padding(
             padding: EdgeInsets.symmetric(horizontal: hPad),
-            child: _sectionHeader('How to Register & Get Your QR Code', TraceColors.navyBlue),
+            child: _sectionHeader(
+              'How to Register & Get Your QR Code',
+              TraceColors.navyBlue,
+            ),
           ),
           const SizedBox(height: 12),
           Padding(
@@ -471,7 +473,9 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
                               offset: const Offset(0, 8),
                             ),
                           ],
-                          border: Border.all(color: TraceColors.lightGrey.withValues(alpha: 0.5)),
+                          border: Border.all(
+                            color: TraceColors.lightGrey.withValues(alpha: 0.5),
+                          ),
                         ),
                         clipBehavior: Clip.hardEdge,
                         child: Image.asset(
@@ -481,11 +485,16 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
                       ),
                       const SizedBox(height: 20),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
                         decoration: BoxDecoration(
                           color: TraceColors.gold.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(100),
-                          border: Border.all(color: TraceColors.gold.withValues(alpha: 0.5)),
+                          border: Border.all(
+                            color: TraceColors.gold.withValues(alpha: 0.5),
+                          ),
                         ),
                         child: Text(
                           'STEP $stepNum',
