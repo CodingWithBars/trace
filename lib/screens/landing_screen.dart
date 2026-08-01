@@ -815,7 +815,7 @@ class _LandingScreenState extends ConsumerState<LandingScreen> {
                       ),
                       _statDivider(),
                       Expanded(
-                        flex: 2,
+                        flex: 3,
                         child: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 8),
                           child: Column(
@@ -825,15 +825,17 @@ class _LandingScreenState extends ConsumerState<LandingScreen> {
                                 shaderCallback: (bounds) => TraceColors
                                     .goldGradient
                                     .createShader(bounds),
-                                child: Text(
-                                  '₱${_formatAmount(totalIncome)}',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 26,
-                                    fontWeight: FontWeight.w900,
-                                    color: Colors.white,
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    '₱${_formatAmount(totalIncome)}',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 26,
+                                      fontWeight: FontWeight.w900,
+                                      color: Colors.white,
+                                    ),
+                                    maxLines: 1,
                                   ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                               const SizedBox(height: 4),

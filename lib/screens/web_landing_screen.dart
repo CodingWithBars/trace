@@ -1192,9 +1192,10 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
               final filteredDocs = docs.where((d) {
                 final data = d.data() as Map<String, dynamic>;
                 if (_ledgerTab == 0) return true;
-                if (_ledgerTab == 1)
+                if (_ledgerTab == 1) {
                   return data['type'] == 'income' ||
                       data['type'] == 'contribution';
+                }
                 return data['type'] == 'expense';
               }).toList();
 

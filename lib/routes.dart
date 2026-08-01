@@ -12,6 +12,7 @@ import 'screens/student_summary_screen.dart';
 import 'screens/scanner_screen.dart';
 import 'screens/admin/admin_login_screen.dart';
 import 'screens/admin/admin_dashboard_screen.dart';
+import 'screens/admin/admin_profile_screen.dart';
 import 'screens/admin/manage_admins_screen.dart';
 import 'screens/admin/students_list_screen.dart';
 import 'screens/admin/attendance_events_screen.dart';
@@ -24,12 +25,10 @@ import 'screens/terms_conditions_screen.dart';
 import 'services/auth_service.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authStateProvider);
-  
   return GoRouter(
     initialLocation: '/',
     redirect: (BuildContext context, GoRouterState state) {
-      final isLoggedIn = authState.valueOrNull != null;
+      final isLoggedIn = ref.read(authServiceProvider).currentUser != null;
       final isAdminRoute = state.uri.path.startsWith('/admin') && state.uri.path != '/admin/login';
       final isScannerRoute = state.uri.path == '/scanner';
 
@@ -74,6 +73,7 @@ final routerProvider = Provider<GoRouter>((ref) {
     GoRoute(path: '/admin/id-claims', builder: (context, state) => const IdClaimsScreen()),
     GoRoute(path: '/admin/logs', builder: (context, state) => const ActivityLogsScreen()),
     GoRoute(path: '/admin/manage_admins', builder: (context, state) => const ManageAdminsScreen()),
+    GoRoute(path: '/admin/profile', builder: (context, state) => const AdminProfileScreen()),
     GoRoute(path: '/scanner', builder: (context, state) => const ScannerScreen()),
   ],
   );

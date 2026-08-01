@@ -162,8 +162,9 @@ class _StudentsListScreenState extends State<StudentsListScreen> {
                                   ),
                                 ],
                                 onChanged: (val) {
-                                  if (val != null)
+                                  if (val != null) {
                                     setState(() => _sortAscending = val);
+                                  }
                                 },
                               ),
                             ),

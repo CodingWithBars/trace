@@ -5,10 +5,10 @@ import 'package:go_router/go_router.dart';
 import '../../../theme/app_theme.dart';
 import '../../../widgets/admin_widgets.dart';
 import '../../../services/auth_service.dart';
-import '../../../services/activity_log_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-class OverviewTab extends StatelessWidget {
+class OverviewTab extends ConsumerWidget {
   final VoidCallback onNewEvent;
   final VoidCallback onAttendance;
   final VoidCallback onPostNews;
@@ -25,7 +25,33 @@ class OverviewTab extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final currentUserEmail = ref.watch(authServiceProvider).currentUser?.email;
+    final canManageAdmins = currentUserEmail == 'officer@dorsu.edu';
+    final canManageFunds = currentUserEmail == 'officer@dorsu.edu' || currentUserEmail == 'auditor@scbc.dorsu';
+
+    void showAccessDenied(String message) {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Row(
+            children: [
+              Icon(Icons.lock_rounded, color: TraceColors.error),
+              SizedBox(width: 8),
+              Text('Access Denied', style: TextStyle(color: TraceColors.error)),
+            ],
+          ),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+    }
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -100,56 +126,196 @@ class OverviewTab extends StatelessWidget {
 
                     return LayoutBuilder(
                       builder: (ctx, constraints) {
-                        final crossCount = constraints.maxWidth > 600 ? 4 : 2;
-                        return GridView.count(
-                          crossAxisCount: crossCount,
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          crossAxisSpacing: 12,
-                          mainAxisSpacing: 12,
-                          childAspectRatio: 1.6,
+                        final isWide = constraints.maxWidth > 600;
+
+                        Widget buildCard(Widget child, {bool fullWidth = false}) {
+                          return AspectRatio(
+                            aspectRatio: isWide ? 2.0 : (fullWidth ? 4.0 : 2.0),
+                            child: child,
+                          );
+                        }
+
+                        if (isWide) {
+                          return Column(
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: buildCard(
+                                      AdminStatCard(
+                                        label: 'Collected',
+                                        value: '₱${NumberFormat('#,##0.00', 'en_US').format(income)}',
+                                        icon: Icons.account_balance_wallet_rounded,
+                                        color: Colors.green,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: buildCard(
+                                      AdminStatCard(
+                                        label: 'Expenses',
+                                        value: '₱${NumberFormat('#,##0.00', 'en_US').format(expense)}',
+                                        icon: Icons.money_off_rounded,
+                                        color: TraceColors.error,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: buildCard(
+                                      AdminStatCard(
+                                        label: 'Events',
+                                        value: eventCount.toString(),
+                                        icon: Icons.event_rounded,
+                                        color: TraceColors.gold,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: buildCard(
+                                      GestureDetector(
+                                        onTap: () => context.push('/admin/students'),
+                                        child: AdminStatCard(
+                                          label: 'Students',
+                                          value: studentCount.toString(),
+                                          icon: Icons.people_rounded,
+                                          color: TraceColors.royalBlue,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: buildCard(
+                                      AdminStatCard(
+                                        label: 'Scans Today',
+                                        value: todayScans.toString(),
+                                        icon: Icons.qr_code_scanner_rounded,
+                                        color: Colors.purple,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: buildCard(
+                                      GestureDetector(
+                                        onTap: () => context.push('/admin/id-claims'),
+                                        child: AdminStatCard(
+                                          label: 'Pending Claims',
+                                          value: pendingClaimsCount.toString(),
+                                          icon: Icons.verified_user_rounded,
+                                          color: pendingClaimsCount > 0 ? TraceColors.error : TraceColors.medGrey,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  const Expanded(child: SizedBox()),
+                                  const SizedBox(width: 12),
+                                  const Expanded(child: SizedBox()),
+                                ],
+                              ),
+                            ],
+                          );
+                        }
+
+                        // Mobile Layout
+                        return Column(
                           children: [
-                            GestureDetector(
-                              onTap: () => context.push('/admin/students'),
-                              child: AdminStatCard(
-                                label: 'Students',
-                                value: studentCount.toString(),
-                                icon: Icons.people_rounded,
-                                color: TraceColors.royalBlue,
-                              ),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: buildCard(
+                                    fullWidth: true,
+                                    AdminStatCard(
+                                      label: 'Collected',
+                                      value: '₱${NumberFormat('#,##0.00', 'en_US').format(income)}',
+                                      icon: Icons.account_balance_wallet_rounded,
+                                      color: Colors.green,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                            AdminStatCard(
-                              label: 'Events',
-                              value: eventCount.toString(),
-                              icon: Icons.event_rounded,
-                              color: TraceColors.gold,
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: buildCard(
+                                    fullWidth: true,
+                                    AdminStatCard(
+                                      label: 'Expenses',
+                                      value: '₱${NumberFormat('#,##0.00', 'en_US').format(expense)}',
+                                      icon: Icons.money_off_rounded,
+                                      color: TraceColors.error,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                            AdminStatCard(
-                              label: 'Collected',
-                              value: '₱${income.toStringAsFixed(0)}',
-                              icon: Icons.account_balance_wallet_rounded,
-                              color: Colors.green,
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: buildCard(
+                                    AdminStatCard(
+                                      label: 'Events',
+                                      value: eventCount.toString(),
+                                      icon: Icons.event_rounded,
+                                      color: TraceColors.gold,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: buildCard(
+                                    GestureDetector(
+                                      onTap: () => context.push('/admin/students'),
+                                      child: AdminStatCard(
+                                        label: 'Students',
+                                        value: studentCount.toString(),
+                                        icon: Icons.people_rounded,
+                                        color: TraceColors.royalBlue,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                            AdminStatCard(
-                              label: 'Expenses',
-                              value: '₱${expense.toStringAsFixed(0)}',
-                              icon: Icons.money_off_rounded,
-                              color: TraceColors.error,
-                            ),
-                            GestureDetector(
-                              onTap: () => context.push('/admin/id-claims'),
-                              child: AdminStatCard(
-                                label: 'Pending Claims',
-                                value: pendingClaimsCount.toString(),
-                                icon: Icons.verified_user_rounded,
-                                color: pendingClaimsCount > 0 ? TraceColors.error : TraceColors.medGrey,
-                              ),
-                            ),
-                            AdminStatCard(
-                              label: 'Scans Today',
-                              value: todayScans.toString(),
-                              icon: Icons.qr_code_scanner_rounded,
-                              color: Colors.purple,
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: buildCard(
+                                    AdminStatCard(
+                                      label: 'Scans Today',
+                                      value: todayScans.toString(),
+                                      icon: Icons.qr_code_scanner_rounded,
+                                      color: Colors.purple,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: buildCard(
+                                    GestureDetector(
+                                      onTap: () => context.push('/admin/id-claims'),
+                                      child: AdminStatCard(
+                                        label: 'Pending Claims',
+                                        value: pendingClaimsCount.toString(),
+                                        icon: Icons.verified_user_rounded,
+                                        color: pendingClaimsCount > 0 ? TraceColors.error : TraceColors.medGrey,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         );
@@ -222,7 +388,7 @@ class OverviewTab extends StatelessWidget {
                     child: AdminQuickAction(
                       label: 'Add Fund',
                       icon: Icons.attach_money_rounded,
-                      onTap: onAddFund,
+                      onTap: canManageFunds ? onAddFund : () => showAccessDenied('Only the Super Admin or Auditor can add funds.'),
                     ),
                   ),
                 ],
@@ -234,7 +400,15 @@ class OverviewTab extends StatelessWidget {
                     child: AdminQuickAction(
                       label: 'Manage Admins',
                       icon: Icons.admin_panel_settings_rounded,
-                      onTap: onAddAdmin,
+                      onTap: canManageAdmins ? onAddAdmin : () => showAccessDenied('Only the Super Admin can manage admin accounts.'),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: AdminQuickAction(
+                      label: 'My Profile',
+                      icon: Icons.person_rounded,
+                      onTap: () => context.push('/admin/profile'),
                     ),
                   ),
                 ],

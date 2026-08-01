@@ -1,7 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'activity_log_service.dart';
 
 final authServiceProvider = Provider<AuthService>((ref) => AuthService());
 
@@ -24,18 +26,49 @@ class AuthService {
       if (cred.user != null) {
         final doc = await FirestoreService.admins.doc(cred.user!.uid).get();
         if (!doc.exists) {
-          await _auth.signOut();
-          return 'Access Denied: You do not have admin privileges.';
+          if (email.toLowerCase() == 'officer@dorsu.edu') {
+            // Auto-restore the master admin if it was accidentally deleted
+            await FirestoreService.admins.doc(cred.user!.uid).set({
+              'name': 'Master Officer',
+              'email': email,
+              'role': 'superadmin',
+              'created_at': FieldValue.serverTimestamp(),
+              'status': 'active',
+            });
+          } else {
+            await _auth.signOut();
+            return 'Access Denied: You do not have admin privileges.';
+          }
         }
+        
+        // Log the login event
+        String adminName = 'Admin';
+        if (doc.exists) {
+          final data = doc.data() as Map<String, dynamic>?;
+          if (data != null && data.containsKey('name')) {
+            adminName = data['name'];
+          }
+        } else if (email.toLowerCase() == 'officer@dorsu.edu') {
+          adminName = 'Master Officer';
+        }
+        
+        await ActivityLogService.log(
+          action: 'Login',
+          message: 'Admin logged in',
+          entityType: 'admin',
+          entityId: cred.user!.uid,
+          actorName: adminName,
+        );
       }
 
       return null; // success
     } on FirebaseAuthException catch (e) {
       switch (e.code) {
         case 'user-not-found':
-          return 'No account found for this email.';
+        case 'invalid-credential':
+        case 'invalid-login-credentials':
         case 'wrong-password':
-          return 'Incorrect password.';
+          return 'Invalid email or password.';
         case 'invalid-email':
           return 'Invalid email address.';
         case 'user-disabled':
@@ -51,7 +84,69 @@ class AuthService {
   }
 
   Future<void> signOut() async {
+    if (currentUser != null) {
+      try {
+        final doc = await FirestoreService.admins.doc(currentUser!.uid).get();
+        String adminName = 'Admin';
+        if (doc.exists) {
+          final data = doc.data() as Map<String, dynamic>?;
+          if (data != null && data.containsKey('name')) {
+            adminName = data['name'];
+          }
+        }
+        
+        await ActivityLogService.log(
+          action: 'Logout',
+          message: 'Admin logged out',
+          entityType: 'admin',
+          entityId: currentUser!.uid,
+          actorName: adminName,
+        );
+      } catch (e) {
+        // Continue with sign out even if logging fails
+      }
+    }
     await _auth.signOut();
+  }
+
+  Future<String?> updateEmail(String currentPassword, String newEmail) async {
+    if (currentUser == null) return 'No user signed in.';
+    try {
+      final cred = EmailAuthProvider.credential(email: currentUser!.email!, password: currentPassword);
+      await currentUser!.reauthenticateWithCredential(cred);
+      
+      await currentUser!.verifyBeforeUpdateEmail(newEmail);
+      
+      // Update email in firestore as well
+      await FirestoreService.admins.doc(currentUser!.uid).update({
+        'email': newEmail,
+      });
+
+      return null;
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'wrong-password') return 'Incorrect current password.';
+      if (e.code == 'invalid-email') return 'Invalid new email address.';
+      if (e.code == 'email-already-in-use') return 'Email is already in use.';
+      return e.message ?? 'Failed to update email.';
+    } catch (e) {
+      return 'An unexpected error occurred.';
+    }
+  }
+
+  Future<String?> updatePassword(String currentPassword, String newPassword) async {
+    if (currentUser == null) return 'No user signed in.';
+    try {
+      final cred = EmailAuthProvider.credential(email: currentUser!.email!, password: currentPassword);
+      await currentUser!.reauthenticateWithCredential(cred);
+      await currentUser!.updatePassword(newPassword);
+      return null;
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'wrong-password') return 'Incorrect current password.';
+      if (e.code == 'weak-password') return 'New password is too weak.';
+      return e.message ?? 'Failed to update password.';
+    } catch (e) {
+      return 'An unexpected error occurred.';
+    }
   }
 
   Future<String?> createAdmin(String name, String email, String password) async {

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:go_router/go_router.dart';
 import '../../theme/app_theme.dart';
 import '../../services/auth_service.dart';
 import '../../services/activity_log_service.dart';
@@ -22,6 +21,7 @@ class _ManageAdminsScreenState extends ConsumerState<ManageAdminsScreen> {
     final emailCtrl = TextEditingController();
     final passwordCtrl = TextEditingController();
     bool isProcessing = false;
+    bool obscurePassword = true;
 
     showModalBottomSheet(
       context: context,
@@ -83,8 +83,18 @@ class _ManageAdminsScreenState extends ConsumerState<ManageAdminsScreen> {
                 const SizedBox(height: 16),
                 TextField(
                   controller: passwordCtrl,
-                  decoration: const InputDecoration(labelText: 'Password (min 6 chars)'),
-                  obscureText: true,
+                  decoration: InputDecoration(
+                    labelText: 'Password (min 6 chars)',
+                    suffixIcon: IconButton(
+                      icon: Icon(obscurePassword ? Icons.visibility_off : Icons.visibility),
+                      onPressed: () {
+                        setModalState(() {
+                          obscurePassword = !obscurePassword;
+                        });
+                      },
+                    ),
+                  ),
+                  obscureText: obscurePassword,
                 ),
                 const SizedBox(height: 32),
                 if (isProcessing)
@@ -195,7 +205,7 @@ class _ManageAdminsScreenState extends ConsumerState<ManageAdminsScreen> {
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
-                  value: role,
+                  initialValue: role,
                   decoration: const InputDecoration(labelText: 'Role'),
                   items: const [
                     DropdownMenuItem(value: 'admin', child: Text('Admin')),
@@ -223,7 +233,7 @@ class _ManageAdminsScreenState extends ConsumerState<ManageAdminsScreen> {
                       if (!ctx.mounted) return;
                       setModalState(() => isProcessing = false);
                       Navigator.pop(ctx);
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Updated successfully'), backgroundColor: TraceColors.success));
+                      ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('Updated successfully'), backgroundColor: TraceColors.success));
                     },
                   ),
               ],
@@ -235,6 +245,12 @@ class _ManageAdminsScreenState extends ConsumerState<ManageAdminsScreen> {
   }
 
   void _confirmDelete(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    if (data['email']?.toString().toLowerCase() == 'officer@dorsu.edu') {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Cannot delete the master admin account.'), backgroundColor: TraceColors.error));
+      return;
+    }
+    
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -285,11 +301,12 @@ class _ManageAdminsScreenState extends ConsumerState<ManageAdminsScreen> {
         title: 'Manage Admins',
         showBackButton: true,
         actions: [
-          TextButton.icon(
+          IconButton(
             onPressed: _showAddAdminDialog,
-            icon: const Icon(Icons.person_add, color: TraceColors.gold, size: 18),
-            label: Text('Add Admin', style: GoogleFonts.inter(color: TraceColors.gold, fontWeight: FontWeight.bold)),
+            icon: const Icon(Icons.person_add, color: TraceColors.gold),
+            tooltip: 'Add Admin',
           ),
+          const SizedBox(width: 8),
         ],
       ),
       body: Padding(
@@ -320,7 +337,7 @@ class _ManageAdminsScreenState extends ConsumerState<ManageAdminsScreen> {
 
                   return ListView.separated(
                     itemCount: docs.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    separatorBuilder: (context, index) => const SizedBox(height: 12),
                     itemBuilder: (ctx, i) {
                       final doc = docs[i];
                       final data = doc.data() as Map<String, dynamic>;
@@ -365,16 +382,39 @@ class _ManageAdminsScreenState extends ConsumerState<ManageAdminsScreen> {
                                 ],
                               ),
                             ),
-                            if (!isMe) ...[
-                              IconButton(
-                                icon: const Icon(Icons.edit_outlined, color: TraceColors.navyBlue),
-                                onPressed: () => _showEditAdminDialog(doc),
+                            if (!isMe)
+                              PopupMenuButton<String>(
+                                icon: const Icon(Icons.more_horiz, color: TraceColors.navyBlue),
+                                onSelected: (val) {
+                                  if (val == 'edit') {
+                                    _showEditAdminDialog(doc);
+                                  } else if (val == 'delete') {
+                                    _confirmDelete(doc);
+                                  }
+                                },
+                                itemBuilder: (ctx) => [
+                                  const PopupMenuItem(
+                                    value: 'edit',
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.edit_outlined, color: TraceColors.navyBlue, size: 20),
+                                        SizedBox(width: 12),
+                                        Text('Edit Admin'),
+                                      ],
+                                    ),
+                                  ),
+                                  const PopupMenuItem(
+                                    value: 'delete',
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.delete_outline, color: TraceColors.error, size: 20),
+                                        SizedBox(width: 12),
+                                        Text('Delete', style: TextStyle(color: TraceColors.error)),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
-                              IconButton(
-                                icon: const Icon(Icons.delete_outline, color: TraceColors.error),
-                                onPressed: () => _confirmDelete(doc),
-                              ),
-                            ],
                           ],
                         ),
                       );

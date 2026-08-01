@@ -46,6 +46,11 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
 
   late final Stream<QuerySnapshot> _fundsStream;
 
+  bool get _canManageFunds {
+    final email = ref.read(authServiceProvider).currentUser?.email;
+    return email == 'officer@dorsu.edu' || email == 'auditor@scbc.dorsu';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -164,18 +169,43 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: TraceColors.gold, width: 2),
-                  color: TraceColors.gold.withValues(alpha: 0.1),
-                ),
-                child: const Icon(
-                  Icons.shield_rounded,
-                  color: TraceColors.gold,
-                  size: 28,
-                ),
+              StreamBuilder<DocumentSnapshot>(
+                stream: FirestoreService.admins.doc(authService.currentUser?.uid).snapshots(),
+                builder: (context, snapshot) {
+                  String? b64;
+                  if (snapshot.hasData && snapshot.data!.exists) {
+                    b64 = (snapshot.data!.data() as Map<String, dynamic>)['profile_image_base64'] as String?;
+                  }
+                  
+                  if (b64 != null && b64.isNotEmpty) {
+                    return Container(
+                      width: 52,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: TraceColors.gold, width: 2),
+                        image: DecorationImage(
+                          image: MemoryImage(base64Decode(b64.split(',').last)),
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    );
+                  }
+                  
+                  return Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: TraceColors.gold, width: 2),
+                      color: TraceColors.gold.withValues(alpha: 0.1),
+                    ),
+                    child: const Icon(
+                      Icons.shield_rounded,
+                      color: TraceColors.gold,
+                      size: 28,
+                    ),
+                  );
+                },
               ),
               const SizedBox(height: 12),
               Text(
@@ -266,32 +296,37 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
 
   Widget? _buildBottomNav() {
     final items = _navItems.take(5).toList();
-    return BottomNavigationBar(
-      currentIndex: _selectedIndex > 4 ? 0 : _selectedIndex,
-      onTap: (i) {
-        setState(() => _selectedIndex = i);
-        if (i == 2) context.go('/scanner');
-      },
-      type: BottomNavigationBarType.fixed,
-      backgroundColor: TraceColors.navyBlue,
-      selectedItemColor: TraceColors.gold,
-      unselectedItemColor: TraceColors.white.withValues(alpha: 0.4),
-      selectedLabelStyle: GoogleFonts.inter(
-        fontWeight: FontWeight.w700,
-        fontSize: 11,
+    return Container(
+      color: TraceColors.navyBlue,
+      padding: const EdgeInsets.only(top: 8, bottom: 5),
+      child: BottomNavigationBar(
+        elevation: 0,
+        currentIndex: _selectedIndex > 4 ? 0 : _selectedIndex,
+        onTap: (i) {
+          setState(() => _selectedIndex = i);
+          if (i == 2) context.go('/scanner');
+        },
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: TraceColors.navyBlue,
+        selectedItemColor: TraceColors.gold,
+        unselectedItemColor: TraceColors.white.withValues(alpha: 0.4),
+        selectedLabelStyle: GoogleFonts.inter(
+          fontWeight: FontWeight.w700,
+          fontSize: 11,
+        ),
+        unselectedLabelStyle: GoogleFonts.inter(
+          fontWeight: FontWeight.w400,
+          fontSize: 11,
+        ),
+        items: items
+            .map(
+              (item) => BottomNavigationBarItem(
+                icon: Icon(item.icon),
+                label: item.label,
+              ),
+            )
+            .toList(),
       ),
-      unselectedLabelStyle: GoogleFonts.inter(
-        fontWeight: FontWeight.w400,
-        fontSize: 11,
-      ),
-      items: items
-          .map(
-            (item) => BottomNavigationBarItem(
-              icon: Icon(item.icon),
-              label: item.label,
-            ),
-          )
-          .toList(),
     );
   }
 
@@ -409,9 +444,13 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
 
     String eventType = 'Whole Day';
     if (event != null) {
-      if (event.isWholeDay) eventType = 'Whole Day';
-      else if (event.isPmOnly) eventType = 'Afternoon';
-      else if (event.isAmOnly) eventType = 'Morning';
+      if (event.isWholeDay) {
+        eventType = 'Whole Day';
+      } else if (event.isPmOnly) {
+        eventType = 'Afternoon';
+      } else if (event.isAmOnly) {
+        eventType = 'Morning';
+      }
     }
 
     String displayTime(TimeOfDay? t, BuildContext context) {
@@ -585,7 +624,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                     const Divider(),
                     const SizedBox(height: 8),
                     DropdownButtonFormField<String>(
-                      value: eventType,
+                      initialValue: eventType,
                       items: const [
                         DropdownMenuItem(value: 'Whole Day', child: Text('Whole Day Event')),
                         DropdownMenuItem(value: 'Morning', child: Text('Morning Only')),
@@ -977,11 +1016,25 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                 };
                 if (doc == null) {
                   payload['date_posted'] = FieldValue.serverTimestamp();
-                  await FirestoreService.db
+                  final docRef = await FirestoreService.db
                       .collection('announcements')
                       .add(payload);
+                  await ActivityLogService.log(
+                    action: 'announcement_posted',
+                    message: 'Posted new announcement: "${titleCtrl.text}"',
+                    entityType: 'announcement',
+                    entityId: docRef.id,
+                    actorName: 'Admin',
+                  );
                 } else {
                   await doc.reference.update(payload);
+                  await ActivityLogService.log(
+                    action: 'announcement_updated',
+                    message: 'Updated announcement: "${titleCtrl.text}"',
+                    entityType: 'announcement',
+                    entityId: doc.id,
+                    actorName: 'Admin',
+                  );
                 }
                 if (!ctx.mounted) return;
                 Navigator.pop(ctx);
@@ -1213,7 +1266,13 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                   child: GoldButton(
                     label: 'Add Entry',
                     icon: Icons.add_rounded,
-                    onPressed: _showFundDialog,
+                    onPressed: () {
+                      if (!_canManageFunds) {
+                        _showAccessDenied('Only the Super Admin or Auditor can add funds.');
+                      } else {
+                        _showFundDialog();
+                      }
+                    },
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -1870,14 +1929,22 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                   );
                 }
 
-                await FirestoreService.db.collection('funds').add({
+                final docRef = await FirestoreService.db.collection('funds').add({
                   'type': type,
                   'description': descCtrl.text.trim(),
                   'amount': double.tryParse(amtCtrl.text) ?? 0,
                   'date': FieldValue.serverTimestamp(),
                   'proof_images_base64': base64Strings,
-                  'eventId': ?selectedEventId,
+                  'eventId': selectedEventId,
                 });
+                await ActivityLogService.log(
+                  action: 'fund_${type}_added',
+                  message: 'Added $type: ₱${amtCtrl.text} for ${descCtrl.text.trim()}',
+                  entityType: 'fund',
+                  entityId: docRef.id,
+                  actorName: 'Admin',
+                );
+
                 if (!ctx.mounted) return;
                 Navigator.pop(ctx);
               },
@@ -2011,6 +2078,10 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                           ),
                         ),
                         onPressed: () async {
+                          if (!_canManageFunds) {
+                            _showAccessDenied('Only the Super Admin or Auditor can delete funds.');
+                            return;
+                          }
                           final confirm = await showDialog<bool>(
                             context: context,
                             builder: (c) => AlertDialog(
@@ -2034,7 +2105,17 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                             ),
                           );
                           if (confirm == true) {
+                            final desc = data['description'] ?? 'Transaction';
+                            final type = data['type'] ?? 'fund';
+                            final amount = data['amount'] ?? 0;
                             await doc.reference.delete();
+                            await ActivityLogService.log(
+                              action: 'fund_${type}_deleted',
+                              message: 'Deleted $type: ₱$amount for $desc',
+                              entityType: 'fund',
+                              entityId: doc.id,
+                              actorName: 'Admin',
+                            );
                             if (!ctx.mounted) return;
                             Navigator.pop(ctx);
                           }
@@ -2046,12 +2127,12 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                       ),
                     ),
                     const SizedBox(width: 16),
-                    Expanded(
-                      child: GoldButton(
-                        label: 'Close',
-                        onPressed: () => Navigator.pop(ctx),
-                      ),
+                  Expanded(
+                    child: GoldButton(
+                      label: 'Close',
+                      onPressed: () => Navigator.pop(ctx),
                     ),
+                  ),
                   ],
                 ),
               ],
@@ -2239,6 +2320,28 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
 
   String _formatAmount(double amount) {
     return NumberFormat('#,##0.00', 'en_US').format(amount);
+  }
+
+  void _showAccessDenied(String message) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.lock_rounded, color: TraceColors.error),
+            SizedBox(width: 8),
+            Text('Access Denied', style: TextStyle(color: TraceColors.error)),
+          ],
+        ),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 }
 

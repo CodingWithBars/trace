@@ -224,8 +224,9 @@ class _EventAttendanceScreenState extends State<EventAttendanceScreen> {
                                 )
                                 .toList(),
                             onChanged: (val) {
-                              if (val != null)
+                              if (val != null) {
                                 setState(() => _selectedProgram = val);
+                              }
                             },
                           ),
                         ),

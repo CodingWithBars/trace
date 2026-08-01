@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import '../../../theme/app_theme.dart';
 import '../../../services/auth_service.dart';
+import '../../../services/activity_log_service.dart';
 
 class AnnouncementsTab extends StatefulWidget {
   final void Function({QueryDocumentSnapshot? doc}) onShowAnnouncementDialog;
@@ -415,7 +416,15 @@ class _AnnouncementsTabState extends State<AnnouncementsTab> {
             ),
           );
           if (confirm == true) {
+            final title = (doc.data() as Map<String, dynamic>)['title'] ?? 'Announcement';
             await doc.reference.delete();
+            await ActivityLogService.log(
+              action: 'announcement_deleted',
+              message: 'Deleted announcement: "$title"',
+              entityType: 'announcement',
+              entityId: doc.id,
+              actorName: 'Admin',
+            );
           }
         }
       },

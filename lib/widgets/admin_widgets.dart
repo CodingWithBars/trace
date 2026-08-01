@@ -20,16 +20,27 @@ class AdminStatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return TraceCard(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.all(12),
+      child: Stack(
         children: [
-          Icon(icon, color: color, size: 24),
-          const Spacer(),
-          Text(value, style: GoogleFonts.inter(
-            fontSize: 22, fontWeight: FontWeight.w800, color: TraceColors.navyBlue,
-          )),
-          Text(label, style: GoogleFonts.inter(fontSize: 12, color: TraceColors.medGrey)),
+          Align(
+            alignment: Alignment.topRight,
+            child: Icon(icon, color: color, size: 24),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(value, style: GoogleFonts.inter(
+                  fontSize: 22, fontWeight: FontWeight.w800, color: TraceColors.navyBlue,
+                )),
+              ),
+              const SizedBox(height: 2),
+              Text(label, style: GoogleFonts.inter(fontSize: 12, color: TraceColors.medGrey)),
+            ],
+          ),
         ],
       ),
     );
