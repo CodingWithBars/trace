@@ -27,8 +27,8 @@ class OverviewTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentUserEmail = ref.watch(authServiceProvider).currentUser?.email;
-    final canManageAdmins = currentUserEmail == 'officer@dorsu.edu';
-    final canManageFunds = currentUserEmail == 'officer@dorsu.edu' || currentUserEmail == 'auditor@scbc.dorsu';
+    final canManageAdmins = currentUserEmail == 'iitsoofficer@dorsu.bc';
+    final canManageFunds = currentUserEmail == 'iitsoofficer@dorsu.bc' || currentUserEmail == 'auditor@scbc.dorsu';
 
     void showAccessDenied(String message) {
       showDialog(

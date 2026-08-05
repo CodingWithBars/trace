@@ -246,7 +246,7 @@ class _ManageAdminsScreenState extends ConsumerState<ManageAdminsScreen> {
 
   void _confirmDelete(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
-    if (data['email']?.toString().toLowerCase() == 'officer@dorsu.edu') {
+    if (data['email']?.toString().toLowerCase() == 'iitsoofficer@dorsu.bc') {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Cannot delete the master admin account.'), backgroundColor: TraceColors.error));
       return;
     }

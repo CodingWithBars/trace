@@ -25,7 +25,7 @@ class AuthService {
       if (cred.user != null) {
         final doc = await FirestoreService.admins.doc(cred.user!.uid).get();
         if (!doc.exists) {
-          if (email.toLowerCase() == 'officer@dorsu.edu') {
+          if (email.toLowerCase() == 'iitsoofficer@dorsu.bc') {
             // Auto-restore the master admin if it was accidentally deleted
             await FirestoreService.admins.doc(cred.user!.uid).set({
               'name': 'Master Officer',
@@ -47,7 +47,7 @@ class AuthService {
           if (data != null && data.containsKey('name')) {
             adminName = data['name'];
           }
-        } else if (email.toLowerCase() == 'officer@dorsu.edu') {
+        } else if (email.toLowerCase() == 'iitsoofficer@dorsu.bc') {
           adminName = 'Master Officer';
         }
         
@@ -78,7 +78,7 @@ class AuthService {
           return 'Login failed. Please try again.';
       }
     } catch (e) {
-      return 'An unexpected error occurred.';
+      return 'An unexpected error occurred: $e';
     }
   }
 

@@ -6,6 +6,7 @@ import '../../services/attendance_service.dart';
 import '../../models/attendance.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/shared_widgets.dart';
+import '../../services/csv_report_service.dart';
 
 class EventAttendanceScreen extends StatefulWidget {
   final String eventId;
@@ -119,6 +120,14 @@ class _EventAttendanceScreenState extends State<EventAttendanceScreen> {
     return Scaffold(
       backgroundColor: TraceColors.offWhite,
       appBar: TraceAppBar(title: _eventName),
+      floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: TraceColors.gold,
+        onPressed: () {
+          CsvReportService.generateAttendanceCsv(filteredAttendance, _studentsMap);
+        },
+        icon: const Icon(Icons.table_chart_rounded, color: TraceColors.navyBlue),
+        label: Text('Export CSV', style: GoogleFonts.inter(color: TraceColors.navyBlue, fontWeight: FontWeight.bold)),
+      ),
       body: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(

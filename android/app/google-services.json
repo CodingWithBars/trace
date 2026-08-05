@@ -1,26 +1,36 @@
 {
   "project_info": {
-    "project_number": "659475939688",
-    "project_id": "trace-1bc3a",
-    "storage_bucket": "trace-1bc3a.firebasestorage.app"
+    "project_number": "283975532588",
+    "project_id": "iitso-trace",
+    "storage_bucket": "iitso-trace.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:659475939688:android:1855593525c30b759116dd",
+        "mobilesdk_app_id": "1:283975532588:android:f7fb4162c641816dda5189",
         "android_client_info": {
           "package_name": "com.example.trace"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "283975532588-ir25cusqi2triquhdaego97oevnii4ri.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
-          "current_key": "AIzaSyAPInSw-9wNTMwN5HLC2704kXgal0ReaUw"
+          "current_key": "AIzaSyBx_v_q0cLF5zJZz25INvNjff6qUGRHYjw"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "283975532588-ir25cusqi2triquhdaego97oevnii4ri.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

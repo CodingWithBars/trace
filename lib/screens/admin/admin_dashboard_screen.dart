@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import '../../services/csv_report_service.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -48,7 +50,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
 
   bool get _canManageFunds {
     final email = ref.read(authServiceProvider).currentUser?.email;
-    return email == 'officer@dorsu.edu' || email == 'auditor@scbc.dorsu';
+    return email == 'iitsoofficer@dorsu.bc' || email == 'auditor@scbc.dorsu';
   }
 
   @override
@@ -1497,59 +1499,68 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                       },
                     ),
                     const SizedBox(height: 24),
-                    SizedBox(
-                      width: double.infinity,
-                      child: GoldButton(
-                        label: 'Generate Report',
-                        icon: Icons.picture_as_pdf_rounded,
-                        onPressed: () async {
-                          Navigator.pop(ctx);
-                          final snap = await FirestoreService.db
-                              .collection('funds')
-                              .orderBy('date', descending: true)
-                              .get();
-                          var docs = snap.docs.where((d) {
-                            final data = d.data();
+                    Row(
+                      children: [
+                        Expanded(
+                          child: GoldButton(
+                            label: 'PDF',
+                            icon: Icons.picture_as_pdf_rounded,
+                            onPressed: () async {
+                              Navigator.pop(ctx);
+                              final snap = await FirestoreService.db
+                                  .collection('funds')
+                                  .orderBy('date', descending: true)
+                                  .get();
+                              var docs = snap.docs.where((d) {
+                                final data = d.data();
+                                if (typeFilter == 'Expenses' && data['type'] != 'expense') return false;
+                                if (typeFilter == 'Contributions' && data['type'] != 'income' && data['type'] != 'contribution') return false;
+                                if (data['date'] != null) {
+                                  final dt = (data['date'] as Timestamp).toDate();
+                                  if (fromDate != null && dt.isBefore(fromDate!)) return false;
+                                  if (toDate != null && dt.isAfter(toDate!.add(const Duration(days: 1)))) return false;
+                                }
+                                if (selectedEvent != null && data['eventId'] != selectedEvent) return false;
+                                return true;
+                              }).toList();
 
-                            if (typeFilter == 'Expenses' &&
-                                data['type'] != 'expense') {
-                              return false;
-                            }
-                            if (typeFilter == 'Contributions' &&
-                                data['type'] != 'income' &&
-                                data['type'] != 'contribution') {
-                              return false;
-                            }
+                              final pdfBytes = await PdfReportService.generateFundsReport(docs);
+                              await Printing.layoutPdf(
+                                onLayout: (_) => pdfBytes,
+                                name: 'Funds_Ledger_Report.pdf',
+                              );
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: GoldButton(
+                            label: 'CSV',
+                            icon: Icons.table_chart_rounded,
+                            onPressed: () async {
+                              Navigator.pop(ctx);
+                              final snap = await FirestoreService.db
+                                  .collection('funds')
+                                  .orderBy('date', descending: true)
+                                  .get();
+                              var docs = snap.docs.where((d) {
+                                final data = d.data();
+                                if (typeFilter == 'Expenses' && data['type'] != 'expense') return false;
+                                if (typeFilter == 'Contributions' && data['type'] != 'income' && data['type'] != 'contribution') return false;
+                                if (data['date'] != null) {
+                                  final dt = (data['date'] as Timestamp).toDate();
+                                  if (fromDate != null && dt.isBefore(fromDate!)) return false;
+                                  if (toDate != null && dt.isAfter(toDate!.add(const Duration(days: 1)))) return false;
+                                }
+                                if (selectedEvent != null && data['eventId'] != selectedEvent) return false;
+                                return true;
+                              }).toList();
 
-                            if (data['date'] != null) {
-                              final dt = (data['date'] as Timestamp).toDate();
-                              if (fromDate != null && dt.isBefore(fromDate!)) {
-                                return false;
-                              }
-                              if (toDate != null &&
-                                  dt.isAfter(
-                                    toDate!.add(const Duration(days: 1)),
-                                  )) {
-                                return false;
-                              }
-                            }
-
-                            if (selectedEvent != null &&
-                                data['eventId'] != selectedEvent) {
-                              return false;
-                            }
-
-                            return true;
-                          }).toList();
-
-                          final pdfBytes =
-                              await PdfReportService.generateFundsReport(docs);
-                          await Printing.layoutPdf(
-                            onLayout: (_) => pdfBytes,
-                            name: 'Funds_Ledger_Report.pdf',
-                          );
-                        },
-                      ),
+                              await CsvReportService.generateFundsCsv(docs);
+                            },
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -1922,11 +1933,15 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
               onPressed: () async {
                 if (descCtrl.text.isEmpty || amtCtrl.text.isEmpty) return;
 
-                List<String> base64Strings = [];
-                for (var bytes in proofBytesList) {
-                  base64Strings.add(
-                    'data:image/jpeg;base64,${base64Encode(bytes)}',
-                  );
+                List<String> imageUrls = [];
+                for (int i = 0; i < proofBytesList.length; i++) {
+                  final bytes = proofBytesList[i];
+                  final ref = FirebaseStorage.instance
+                      .ref()
+                      .child('receipts/${DateTime.now().millisecondsSinceEpoch}_$i.jpg');
+                  await ref.putData(bytes);
+                  final url = await ref.getDownloadURL();
+                  imageUrls.add(url);
                 }
 
                 final docRef = await FirestoreService.db.collection('funds').add({
@@ -1934,7 +1949,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                   'description': descCtrl.text.trim(),
                   'amount': double.tryParse(amtCtrl.text) ?? 0,
                   'date': FieldValue.serverTimestamp(),
-                  'proof_images_base64': base64Strings,
+                  'proof_images_urls': imageUrls,
                   'eventId': selectedEventId,
                 });
                 await ActivityLogService.log(
@@ -2026,6 +2041,9 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                         data['proof_image_base64'].toString().isNotEmpty) {
                       proofImages = [data['proof_image_base64']];
                     }
+                    if (data['proof_images_urls'] != null) {
+                      proofImages.addAll(List<String>.from(data['proof_images_urls']));
+                    }
 
                     if (proofImages.isEmpty) return const SizedBox();
                     return Column(
@@ -2049,12 +2067,19 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                                   onTap: () => _showFullImage(b64),
                                   child: ClipRRect(
                                     borderRadius: BorderRadius.circular(12),
-                                    child: Image.memory(
-                                      base64Decode(b64.split(',').last),
-                                      fit: BoxFit.cover,
-                                      width: 80,
-                                      height: 80,
-                                    ),
+                                    child: b64.startsWith('http')
+                                        ? Image.network(
+                                            b64,
+                                            fit: BoxFit.cover,
+                                            width: 80,
+                                            height: 80,
+                                          )
+                                        : Image.memory(
+                                            base64Decode(b64.split(',').last),
+                                            fit: BoxFit.cover,
+                                            width: 80,
+                                            height: 80,
+                                          ),
                                   ),
                                 ),
                               )
@@ -2153,9 +2178,13 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
           alignment: Alignment.center,
           children: [
             InteractiveViewer(
-              child: Image.memory(
-                base64Decode(base64String.split(',').last),
-                filterQuality: FilterQuality.high,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: base64String.startsWith('http')
+                    ? Image.network(base64String)
+                    : Image.memory(
+                        base64Decode(base64String.split(',').last),
+                      ),
               ),
             ),
             Positioned(

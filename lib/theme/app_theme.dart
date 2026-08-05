@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class TraceColors {
-  // Primary Blue
-  static const Color navyBlue = Color(0xFF0D1B3E);
-  static const Color royalBlue = Color(0xFF1A3A6B);
-  static const Color midBlue = Color(0xFF1565C0);
-  static const Color lightBlue = Color(0xFF1E88E5);
+  // Primary (Black/Gray Theme)
+  static const Color navyBlue = Color(0xFF121212); // Deep Black
+  static const Color royalBlue = Color(0xFF242424); // Dark Gray
+  static const Color midBlue = Color(0xFF333333); // Medium Gray
+  static const Color lightBlue = Color(0xFF4F4F4F); // Light Gray
 
-  // Gold
-  static const Color gold = Color(0xFFFFD700);
-  static const Color darkGold = Color(0xFFC9A800);
-  static const Color lightGold = Color(0xFFFFE566);
+  // Accent (Orange Theme)
+  static const Color gold = Color(0xFFFF6D00); // Bright Orange
+  static const Color darkGold = Color(0xFFE65100); // Dark Orange
+  static const Color lightGold = Color(0xFFFF9E80); // Light Orange
 
   // Neutral
   static const Color white = Color(0xFFFFFFFF);
@@ -28,8 +28,8 @@ class TraceColors {
   static const Color errorLight = Color(0xFFFFEBEE);
   static const Color warning = Color(0xFFE65100);
   static const Color warningLight = Color(0xFFFFF3E0);
-  static const Color late = Color(0xFFC9A800);
-  static const Color lateLight = Color(0xFFFFFDE7);
+  static const Color late = Color(0xFFE65100); // Orange for late
+  static const Color lateLight = Color(0xFFFFF3E0);
 
   // Gradients
   static const LinearGradient heroGradient = LinearGradient(
@@ -45,7 +45,7 @@ class TraceColors {
   );
 
   static const LinearGradient cardGradient = LinearGradient(
-    colors: [navyBlue, Color(0xFF1A2A5E)],
+    colors: [navyBlue, Color(0xFF1E1E1E)], // Darker gray
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );

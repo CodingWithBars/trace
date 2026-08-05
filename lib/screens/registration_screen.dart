@@ -30,14 +30,8 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
 
   final List<String> _programs = [
     'BSIT',
-    'BSBA',
-    'BSA',
-    'BTLED',
-    'BSAM',
-    'DEVCOM',
-    'BSANSCI',
   ];
-  String? _selectedProgram;
+  String? _selectedProgram = 'BSIT';
 
   final List<String> _yearLevels = [
     '1st Year',
