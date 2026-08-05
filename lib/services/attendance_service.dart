@@ -10,18 +10,27 @@ enum ScanPhase { timeInAm, timeOutAm, timeInPm, timeOutPm }
 extension ScanPhaseExt on ScanPhase {
   String get label {
     switch (this) {
-      case ScanPhase.timeInAm: return 'Morning In';
-      case ScanPhase.timeOutAm: return 'Morning Out';
-      case ScanPhase.timeInPm: return 'Afternoon In';
-      case ScanPhase.timeOutPm: return 'Afternoon Out';
+      case ScanPhase.timeInAm:
+        return 'Morning In';
+      case ScanPhase.timeOutAm:
+        return 'Morning Out';
+      case ScanPhase.timeInPm:
+        return 'Afternoon In';
+      case ScanPhase.timeOutPm:
+        return 'Afternoon Out';
     }
   }
+
   String get field {
     switch (this) {
-      case ScanPhase.timeInAm: return 'time_in_am';
-      case ScanPhase.timeOutAm: return 'time_out_am';
-      case ScanPhase.timeInPm: return 'time_in_pm';
-      case ScanPhase.timeOutPm: return 'time_out_pm';
+      case ScanPhase.timeInAm:
+        return 'time_in_am';
+      case ScanPhase.timeOutAm:
+        return 'time_out_am';
+      case ScanPhase.timeInPm:
+        return 'time_in_pm';
+      case ScanPhase.timeOutPm:
+        return 'time_out_pm';
     }
   }
 }
@@ -73,8 +82,11 @@ class AttendanceService {
       String? attendanceDocId;
 
       if (isOfflineMode && offlineStudents != null) {
-        final matches = offlineStudents.where((s) => s.qrHash == qrHash).toList();
-        if (matches.isEmpty) return ScanResult(status: ScanResultStatus.studentNotFound);
+        final matches = offlineStudents
+            .where((s) => s.qrHash == qrHash)
+            .toList();
+        if (matches.isEmpty)
+          return ScanResult(status: ScanResultStatus.studentNotFound);
         student = matches.first;
 
         if (offlineAttendance != null) {
@@ -109,15 +121,18 @@ class AttendanceService {
             .where('student_id', isEqualTo: student.id)
             .limit(1)
             .get();
-        
+
         if (attendanceSnap.docs.isNotEmpty) {
           attendanceDocId = attendanceSnap.docs.first.id;
-          attendanceData = attendanceSnap.docs.first.data() as Map<String, dynamic>;
+          attendanceData =
+              attendanceSnap.docs.first.data() as Map<String, dynamic>;
         }
       }
 
       final now = DateTime.now();
-      final isLate = event.timeInClosed || (event.cutOffTime != null && now.isAfter(event.cutOffTime!));
+      final isLate =
+          event.timeInClosed ||
+          (event.cutOffTime != null && now.isAfter(event.cutOffTime!));
 
       if (attendanceData == null) {
         // First scan — create record
@@ -160,7 +175,8 @@ class AttendanceService {
           newDocId = newDocRef.id;
           await ActivityLogService.log(
             action: 'attendance_scan',
-            message: '${student.name} scanned for ${phase.label} (${event.eventName})',
+            message:
+                '${student.name} scanned for ${phase.label} (${event.eventName})',
             entityType: 'attendance',
             entityId: newDocId,
             actorName: 'Scanner',
@@ -168,7 +184,9 @@ class AttendanceService {
         }
 
         return ScanResult(
-          status: isLate ? ScanResultStatus.lateEntry : ScanResultStatus.timeInSuccess,
+          status: isLate
+              ? ScanResultStatus.lateEntry
+              : ScanResultStatus.timeInSuccess,
           studentName: student.name,
           studentId: student.studentId,
           studentAvatarUrl: student.avatarUrl,
@@ -191,8 +209,16 @@ class AttendanceService {
       }
 
       // Check if all required slots complete
-      final updatedData = {...attendanceData, phase.field: Timestamp.fromDate(now)};
-      final finalStatus = _computeStatusFromData(updatedData, phase, now, event);
+      final updatedData = {
+        ...attendanceData,
+        phase.field: Timestamp.fromDate(now),
+      };
+      final finalStatus = _computeStatusFromData(
+        updatedData,
+        phase,
+        now,
+        event,
+      );
       updatedData['final_status'] = finalStatus;
 
       final updateFields = {
@@ -202,13 +228,19 @@ class AttendanceService {
       };
 
       if (isOfflineMode) {
-        if (offlineAttendance != null) offlineAttendance[attendanceDocId!] = updatedData;
-        FirestoreService.attendance.doc(attendanceDocId).update(updateFields); // Fire and forget
+        if (offlineAttendance != null)
+          offlineAttendance[attendanceDocId!] = updatedData;
+        FirestoreService.attendance
+            .doc(attendanceDocId)
+            .update(updateFields); // Fire and forget
       } else {
-        await FirestoreService.attendance.doc(attendanceDocId).update(updateFields);
+        await FirestoreService.attendance
+            .doc(attendanceDocId)
+            .update(updateFields);
         await ActivityLogService.log(
           action: 'attendance_scan',
-          message: '${student.name} scanned for ${phase.label} (${event.eventName})',
+          message:
+              '${student.name} scanned for ${phase.label} (${event.eventName})',
           entityType: 'attendance',
           entityId: attendanceDocId,
           actorName: 'Scanner',
@@ -221,8 +253,10 @@ class AttendanceService {
         status: isComplete
             ? ScanResultStatus.attendanceComplete
             : ((phase == ScanPhase.timeOutAm || phase == ScanPhase.timeOutPm)
-                ? ScanResultStatus.timeOutSuccess
-                : (isLate ? ScanResultStatus.lateEntry : ScanResultStatus.timeInSuccess)),
+                  ? ScanResultStatus.timeOutSuccess
+                  : (isLate
+                        ? ScanResultStatus.lateEntry
+                        : ScanResultStatus.timeInSuccess)),
         studentName: student.name,
         studentId: student.studentId,
         studentAvatarUrl: student.avatarUrl,
@@ -245,10 +279,16 @@ class AttendanceService {
     Map<String, Map<String, dynamic>>? offlineAttendance,
   }) async {
     if (isOfflineMode) {
-      if (offlineAttendance != null && offlineAttendance.containsKey(attendanceDocId)) {
+      if (offlineAttendance != null &&
+          offlineAttendance.containsKey(attendanceDocId)) {
         final data = offlineAttendance[attendanceDocId]!;
         data.remove(phase.field);
-        data['final_status'] = _computeStatusFromData(data, phase, DateTime.now(), event);
+        data['final_status'] = _computeStatusFromData(
+          data,
+          phase,
+          DateTime.now(),
+          event,
+        );
         FirestoreService.attendance.doc(attendanceDocId).update({
           phase.field: FieldValue.delete(),
           'final_status': data['final_status'],
@@ -263,13 +303,18 @@ class AttendanceService {
 
     final data = docSnap.data() as Map<String, dynamic>;
     data.remove(phase.field);
-    final finalStatus = _computeStatusFromData(data, phase, DateTime.now(), event);
+    final finalStatus = _computeStatusFromData(
+      data,
+      phase,
+      DateTime.now(),
+      event,
+    );
 
     await docRef.update({
       phase.field: FieldValue.delete(),
       'final_status': finalStatus,
     });
-    
+
     await ActivityLogService.log(
       action: 'attendance_voided',
       message: 'Scan voided for ${phase.label} (${event.eventName})',
@@ -280,12 +325,18 @@ class AttendanceService {
   }
 
   static String _computeStatus(ScanPhase phase, DateTime now, Event event) {
-    if (event.timeInClosed || (event.cutOffTime != null && now.isAfter(event.cutOffTime!))) return 'Late';
+    if (event.timeInClosed ||
+        (event.cutOffTime != null && now.isAfter(event.cutOffTime!)))
+      return 'Late';
     return 'Incomplete';
   }
 
   static String _computeStatusFromData(
-      Map<String, dynamic> data, ScanPhase phase, DateTime now, Event event) {
+    Map<String, dynamic> data,
+    ScanPhase phase,
+    DateTime now,
+    Event event,
+  ) {
     if (_isAttendanceComplete(data, event)) return 'Present';
     return 'Incomplete';
   }
@@ -310,6 +361,8 @@ class AttendanceService {
     final snap = await FirestoreService.attendance
         .where('event_id', isEqualTo: eventId)
         .get();
-    return snap.docs.map((d) => Attendance.fromMap(d.data() as Map<String, dynamic>, d.id)).toList();
+    return snap.docs
+        .map((d) => Attendance.fromMap(d.data() as Map<String, dynamic>, d.id))
+        .toList();
   }
 }

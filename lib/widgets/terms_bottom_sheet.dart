@@ -30,7 +30,11 @@ class _TermsBottomSheetState extends State<TermsBottomSheet> {
               children: [
                 Text(
                   'Privacy Policy & Terms',
-                  style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: TraceColors.navyBlue),
+                  style: GoogleFonts.inter(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: TraceColors.navyBlue,
+                  ),
                 ),
                 IconButton(
                   icon: const Icon(Icons.close),
@@ -43,7 +47,8 @@ class _TermsBottomSheetState extends State<TermsBottomSheet> {
             child: NotificationListener<ScrollNotification>(
               onNotification: (ScrollNotification scrollInfo) {
                 // Determine if user reached the bottom (with a small 20px threshold)
-                if (scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 20) {
+                if (scrollInfo.metrics.pixels >=
+                    scrollInfo.metrics.maxScrollExtent - 20) {
                   if (!_reachedBottom) {
                     setState(() => _reachedBottom = true);
                     widget.onScrolledToBottom();
@@ -56,7 +61,13 @@ class _TermsBottomSheetState extends State<TermsBottomSheet> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('PRIVACY POLICY', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold)),
+                    Text(
+                      'PRIVACY POLICY',
+                      style: GoogleFonts.inter(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     const SizedBox(height: 16),
                     Text(
                       'trace ("the App", "we", "our", or "us") is committed to protecting the privacy of our students. This Privacy Policy explains how we collect, use, and safeguard your information when you interact with our digital attendance tracking system during school events.\n\n'
@@ -78,10 +89,20 @@ class _TermsBottomSheetState extends State<TermsBottomSheet> {
                       'Your personal data will never be sold, rented, or shared with third-party commercial entities. Attendance logs may only be shared with:\n'
                       '• Campus Administration and Department Heads for official academic or clearance verification.\n'
                       '• Authorized institutional committees exclusively for evaluating official campus activity compliance.',
-                      style: GoogleFonts.inter(fontSize: 14, height: 1.5, color: Colors.black87),
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        height: 1.5,
+                        color: Colors.black87,
+                      ),
                     ),
                     const SizedBox(height: 32),
-                    Text('TERMS & CONDITIONS', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold)),
+                    Text(
+                      'TERMS & CONDITIONS',
+                      style: GoogleFonts.inter(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     const SizedBox(height: 16),
                     Text(
                       'By utilizing the trace application or presenting your student credentials at our digital scanning checkpoints, you agree to comply with and be bound by the following Terms and Conditions.\n\n'
@@ -97,20 +118,30 @@ class _TermsBottomSheetState extends State<TermsBottomSheet> {
                       '• Appeals must be accompanied by valid proof of attendance (e.g., physical marshal verification or designated venue documentation). Corrections requested after this window will not be entertained.\n\n'
                       '4. Modifications to the System\n'
                       'The technical administrators reserve the right to modify, pause, or upgrade the application, scanning windows, or evaluation rules to improve operations, provided that any major workflow updates are communicated transparently to the student body prior to execution.',
-                      style: GoogleFonts.inter(fontSize: 14, height: 1.5, color: Colors.black87),
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        height: 1.5,
+                        color: Colors.black87,
+                      ),
                     ),
                     const SizedBox(height: 48),
                     Center(
                       child: Text(
-                        _reachedBottom ? 'You may now close this and check the box.' : 'Please scroll to the bottom to continue.',
+                        _reachedBottom
+                            ? 'You may now close this and check the box.'
+                            : 'Please scroll to the bottom to continue.',
                         style: GoogleFonts.inter(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
-                          color: _reachedBottom ? Colors.green : TraceColors.error,
+                          color: _reachedBottom
+                              ? Colors.green
+                              : TraceColors.error,
                         ),
                       ),
                     ),
-                    const SizedBox(height: 48), // Padding at bottom so they can scroll past the text easily
+                    const SizedBox(
+                      height: 48,
+                    ), // Padding at bottom so they can scroll past the text easily
                   ],
                 ),
               ),

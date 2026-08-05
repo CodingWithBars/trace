@@ -36,5 +36,11 @@ service cloud.firestore {
       allow read: if true;
       allow create: if true;
     }
+    
+    // Allow anyone to create activity logs (e.g. for registration events)
+    match /activity_logs/{logId} {
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
+    }
   }
 }

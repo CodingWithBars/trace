@@ -23,19 +23,26 @@ class NetworkService {
     _handleConnectivityChange(results);
 
     // Listen for changes
-    _connectivitySub = Connectivity().onConnectivityChanged.listen(_handleConnectivityChange);
+    _connectivitySub = Connectivity().onConnectivityChanged.listen(
+      _handleConnectivityChange,
+    );
   }
 
   void _handleConnectivityChange(List<ConnectivityResult> results) {
-    final currentlyOffline = results.contains(ConnectivityResult.none) || results.isEmpty;
-    
+    final currentlyOffline =
+        results.contains(ConnectivityResult.none) || results.isEmpty;
+
     if (currentlyOffline != _isOffline) {
       _isOffline = currentlyOffline;
       if (_isOffline) {
-        debugPrint('NetworkService: Connection lost. Disabling Firestore network to force cache mode.');
+        debugPrint(
+          'NetworkService: Connection lost. Disabling Firestore network to force cache mode.',
+        );
         FirebaseFirestore.instance.disableNetwork();
       } else {
-        debugPrint('NetworkService: Connection restored. Enabling Firestore network for sync.');
+        debugPrint(
+          'NetworkService: Connection restored. Enabling Firestore network for sync.',
+        );
         FirebaseFirestore.instance.enableNetwork();
       }
     }

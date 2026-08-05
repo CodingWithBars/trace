@@ -4,13 +4,13 @@ class Attendance {
   final String eventName;
   final String studentId;
   final DateTime date;
-  
+
   // Restored AM/PM scan phases
   final DateTime? timeInAm;
   final DateTime? timeOutAm;
   final DateTime? timeInPm;
   final DateTime? timeOutPm;
-  
+
   final String finalStatus;
 
   Attendance({
@@ -32,11 +32,21 @@ class Attendance {
       eventId: data['event_id'] ?? '',
       eventName: data['event_name'] ?? 'Unknown Event',
       studentId: data['student_id'] ?? '',
-      date: data['date'] != null ? (data['date'] as dynamic).toDate() : DateTime.now(),
-      timeInAm: data['time_in_am'] != null ? (data['time_in_am'] as dynamic).toDate() : null,
-      timeOutAm: data['time_out_am'] != null ? (data['time_out_am'] as dynamic).toDate() : null,
-      timeInPm: data['time_in_pm'] != null ? (data['time_in_pm'] as dynamic).toDate() : null,
-      timeOutPm: data['time_out_pm'] != null ? (data['time_out_pm'] as dynamic).toDate() : null,
+      date: data['date'] != null
+          ? (data['date'] as dynamic).toDate()
+          : DateTime.now(),
+      timeInAm: data['time_in_am'] != null
+          ? (data['time_in_am'] as dynamic).toDate()
+          : null,
+      timeOutAm: data['time_out_am'] != null
+          ? (data['time_out_am'] as dynamic).toDate()
+          : null,
+      timeInPm: data['time_in_pm'] != null
+          ? (data['time_in_pm'] as dynamic).toDate()
+          : null,
+      timeOutPm: data['time_out_pm'] != null
+          ? (data['time_out_pm'] as dynamic).toDate()
+          : null,
       finalStatus: data['final_status'] ?? 'Incomplete',
     );
   }
@@ -55,4 +65,3 @@ class Attendance {
     };
   }
 }
-

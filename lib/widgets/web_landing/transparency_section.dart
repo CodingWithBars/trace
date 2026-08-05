@@ -59,7 +59,10 @@ class _TransparencySectionState extends State<TransparencySection> {
                 children: [
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: hPad),
-                    child: buildSectionHeader('Transparency Ledger', Colors.white),
+                    child: buildSectionHeader(
+                      'Transparency Ledger',
+                      Colors.white,
+                    ),
                   ),
                   const SizedBox(height: 6),
                   Padding(

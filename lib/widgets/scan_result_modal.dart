@@ -18,11 +18,22 @@ class ScanResultModal extends StatefulWidget {
     this.onVoid,
   });
 
-  static Future<void> show(BuildContext context, ScanResult result, ScanPhase phase, VoidCallback onContinue, {VoidCallback? onVoid}) {
+  static Future<void> show(
+    BuildContext context,
+    ScanResult result,
+    ScanPhase phase,
+    VoidCallback onContinue, {
+    VoidCallback? onVoid,
+  }) {
     return showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => ScanResultModal(result: result, phase: phase, onContinue: onContinue, onVoid: onVoid),
+      builder: (_) => ScanResultModal(
+        result: result,
+        phase: phase,
+        onContinue: onContinue,
+        onVoid: onVoid,
+      ),
     );
   }
 
@@ -30,7 +41,8 @@ class ScanResultModal extends StatefulWidget {
   State<ScanResultModal> createState() => _ScanResultModalState();
 }
 
-class _ScanResultModalState extends State<ScanResultModal> with SingleTickerProviderStateMixin {
+class _ScanResultModalState extends State<ScanResultModal>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnim;
   late Animation<double> _fadeAnim;
@@ -38,7 +50,10 @@ class _ScanResultModalState extends State<ScanResultModal> with SingleTickerProv
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 400));
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
     _scaleAnim = CurvedAnimation(parent: _controller, curve: Curves.elasticOut);
     _fadeAnim = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
     _controller.forward();
@@ -70,7 +85,13 @@ class _ScanResultModalState extends State<ScanResultModal> with SingleTickerProv
                   borderRadius: BorderRadius.circular(24),
                   color: TraceColors.white,
                   border: Border.all(color: config.borderColor, width: 2),
-                  boxShadow: [BoxShadow(color: config.borderColor.withValues(alpha: 0.2), blurRadius: 24, spreadRadius: 4)],
+                  boxShadow: [
+                    BoxShadow(
+                      color: config.borderColor.withValues(alpha: 0.2),
+                      blurRadius: 24,
+                      spreadRadius: 4,
+                    ),
+                  ],
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -86,26 +107,51 @@ class _ScanResultModalState extends State<ScanResultModal> with SingleTickerProv
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: TraceColors.offWhite,
-                            border: Border.all(color: config.borderColor, width: 2),
+                            border: Border.all(
+                              color: config.borderColor,
+                              width: 2,
+                            ),
                           ),
                           child: ClipOval(
-                            child: widget.result.studentAvatarUrl != null && widget.result.studentAvatarUrl!.isNotEmpty
-                                ? (widget.result.studentAvatarUrl!.startsWith('data:image')
-                                    ? Image.memory(
-                                        const Base64Decoder().convert(widget.result.studentAvatarUrl!.split(',').last),
-                                        fit: BoxFit.cover,
-                                        width: 80,
-                                        height: 80,
-                                        errorBuilder: (ctx, err, stack) => const Icon(Icons.person, size: 40, color: TraceColors.medGrey),
+                            child:
+                                widget.result.studentAvatarUrl != null &&
+                                    widget.result.studentAvatarUrl!.isNotEmpty
+                                ? (widget.result.studentAvatarUrl!.startsWith(
+                                        'data:image',
                                       )
-                                    : Image.network(
-                                        widget.result.studentAvatarUrl!,
-                                        fit: BoxFit.cover,
-                                        width: 80,
-                                        height: 80,
-                                        errorBuilder: (ctx, err, stack) => const Icon(Icons.person, size: 40, color: TraceColors.medGrey),
-                                      ))
-                                : const Icon(Icons.person, size: 40, color: TraceColors.medGrey),
+                                      ? Image.memory(
+                                          const Base64Decoder().convert(
+                                            widget.result.studentAvatarUrl!
+                                                .split(',')
+                                                .last,
+                                          ),
+                                          fit: BoxFit.cover,
+                                          width: 80,
+                                          height: 80,
+                                          errorBuilder: (ctx, err, stack) =>
+                                              const Icon(
+                                                Icons.person,
+                                                size: 40,
+                                                color: TraceColors.medGrey,
+                                              ),
+                                        )
+                                      : Image.network(
+                                          widget.result.studentAvatarUrl!,
+                                          fit: BoxFit.cover,
+                                          width: 80,
+                                          height: 80,
+                                          errorBuilder: (ctx, err, stack) =>
+                                              const Icon(
+                                                Icons.person,
+                                                size: 40,
+                                                color: TraceColors.medGrey,
+                                              ),
+                                        ))
+                                : const Icon(
+                                    Icons.person,
+                                    size: 40,
+                                    color: TraceColors.medGrey,
+                                  ),
                           ),
                         ),
                         Positioned(
@@ -116,128 +162,170 @@ class _ScanResultModalState extends State<ScanResultModal> with SingleTickerProv
                             decoration: BoxDecoration(
                               color: config.iconBg,
                               shape: BoxShape.circle,
-                              border: Border.all(color: TraceColors.white, width: 2),
+                              border: Border.all(
+                                color: TraceColors.white,
+                                width: 2,
+                              ),
                             ),
-                            child: Icon(config.icon, size: 16, color: config.iconColor),
+                            child: Icon(
+                              config.icon,
+                              size: 16,
+                              color: config.iconColor,
+                            ),
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 20),
-                // Status label
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: config.iconBg,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    config.label,
-                    style: GoogleFonts.inter(
-                      fontSize: 12, fontWeight: FontWeight.w700,
-                      color: config.iconColor, letterSpacing: 1.2,
+                    // Status label
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: config.iconBg,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        config.label,
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: config.iconColor,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                // Student name
-                if (widget.result.studentName != null) ...[
-                  Text(
-                    widget.result.studentName!,
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(
-                      fontSize: 22, fontWeight: FontWeight.w800, color: TraceColors.navyBlue,
-                    ),
-                  ),
-                  if (widget.result.studentId != null)
-                    Text(
-                      'ID: ${widget.result.studentId}',
-                      style: GoogleFonts.inter(fontSize: 13, color: TraceColors.medGrey),
-                    ),
-                ],
-                // Timestamp
-                if (widget.result.timestamp != null) ...[
-                  const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: TraceColors.offWhite,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.access_time, size: 16, color: TraceColors.royalBlue),
-                        const SizedBox(width: 8),
+                    const SizedBox(height: 12),
+                    // Student name
+                    if (widget.result.studentName != null) ...[
+                      Text(
+                        widget.result.studentName!,
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.inter(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                          color: TraceColors.navyBlue,
+                        ),
+                      ),
+                      if (widget.result.studentId != null)
                         Text(
-                          _formatTime(widget.result.timestamp!),
+                          'ID: ${widget.result.studentId}',
                           style: GoogleFonts.inter(
-                            fontSize: 15, fontWeight: FontWeight.w700, color: TraceColors.royalBlue,
+                            fontSize: 13,
+                            color: TraceColors.medGrey,
                           ),
                         ),
-                      ],
+                    ],
+                    // Timestamp
+                    if (widget.result.timestamp != null) ...[
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: TraceColors.offWhite,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.access_time,
+                              size: 16,
+                              color: TraceColors.royalBlue,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              _formatTime(widget.result.timestamp!),
+                              style: GoogleFonts.inter(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                color: TraceColors.royalBlue,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                    // Custom message
+                    if (widget.result.message != null) ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        widget.result.message!,
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          color: TraceColors.medGrey,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 24),
+                    // Continue button
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          widget.onContinue();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: config.borderColor,
+                          foregroundColor: config.buttonTextColor,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text(
+                          'Continue Scanning',
+                          style: GoogleFonts.inter(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                ],
-                // Custom message
-                if (widget.result.message != null) ...[
-                  const SizedBox(height: 12),
-                  Text(
-                    widget.result.message!,
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(fontSize: 14, color: TraceColors.medGrey),
-                  ),
-                ],
-                const SizedBox(height: 24),
-                // Continue button
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      widget.onContinue();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: config.borderColor,
-                      foregroundColor: config.buttonTextColor,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                    child: Text(
-                      'Continue Scanning',
-                      style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 15),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (widget.onVoid != null && widget.result.attendanceDocId != null)
-            Positioned(
-              top: 12,
-              right: 12,
-              child: TextButton.icon(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  widget.onVoid!();
-                },
-                style: TextButton.styleFrom(
-                  foregroundColor: TraceColors.error,
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                icon: const Icon(Icons.undo_rounded, size: 16),
-                label: Text(
-                  'Void',
-                  style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 13, decoration: TextDecoration.underline),
+                  ],
                 ),
               ),
-            ),
-        ],
+              if (widget.onVoid != null &&
+                  widget.result.attendanceDocId != null)
+                Positioned(
+                  top: 12,
+                  right: 12,
+                  child: TextButton.icon(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      widget.onVoid!();
+                    },
+                    style: TextButton.styleFrom(
+                      foregroundColor: TraceColors.error,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    icon: const Icon(Icons.undo_rounded, size: 16),
+                    label: Text(
+                      'Void',
+                      style: GoogleFonts.inter(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
-    ),
-  ),
     );
   }
 

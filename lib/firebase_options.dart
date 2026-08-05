@@ -63,7 +63,8 @@ class DefaultFirebaseOptions {
     messagingSenderId: '283975532588',
     projectId: 'iitso-trace',
     storageBucket: 'iitso-trace.firebasestorage.app',
-    iosClientId: '283975532588-7ogohoj6lcr7n8dv1mjkljd88pksmgh1.apps.googleusercontent.com',
+    iosClientId:
+        '283975532588-7ogohoj6lcr7n8dv1mjkljd88pksmgh1.apps.googleusercontent.com',
     iosBundleId: 'com.example.trace',
   );
   static const FirebaseOptions macos = FirebaseOptions(
@@ -72,7 +73,8 @@ class DefaultFirebaseOptions {
     messagingSenderId: '283975532588',
     projectId: 'iitso-trace',
     storageBucket: 'iitso-trace.firebasestorage.app',
-    iosClientId: '283975532588-7ogohoj6lcr7n8dv1mjkljd88pksmgh1.apps.googleusercontent.com',
+    iosClientId:
+        '283975532588-7ogohoj6lcr7n8dv1mjkljd88pksmgh1.apps.googleusercontent.com',
     iosBundleId: 'com.example.trace',
   );
 

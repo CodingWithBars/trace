@@ -12,7 +12,8 @@ class WebStudentLoginScreen extends ConsumerStatefulWidget {
   const WebStudentLoginScreen({super.key});
 
   @override
-  ConsumerState<WebStudentLoginScreen> createState() => _WebStudentLoginScreenState();
+  ConsumerState<WebStudentLoginScreen> createState() =>
+      _WebStudentLoginScreenState();
 }
 
 class _WebStudentLoginScreenState extends ConsumerState<WebStudentLoginScreen> {

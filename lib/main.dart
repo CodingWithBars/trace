@@ -14,7 +14,10 @@ import 'package:flutter/services.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: [SystemUiOverlay.top]);
+  SystemChrome.setEnabledSystemUIMode(
+    SystemUiMode.manual,
+    overlays: [SystemUiOverlay.top],
+  );
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Color(0xFF0D1B3E), // TraceColors.navyBlue
@@ -24,30 +27,34 @@ void main() async {
   );
 
   try {
-    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-    FirebaseFirestore.instance.settings = const Settings(persistenceEnabled: true, cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED);
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    FirebaseFirestore.instance.settings = const Settings(
+      persistenceEnabled: true,
+      cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+    );
     await FirestoreService.initialize();
     await NetworkService.initialize();
-    
+
     // Initialize notification service but catch any errors (e.g. permission dialogs failing before runApp)
     try {
       await NotificationService.initialize();
     } catch (e) {
       debugPrint('Notification initialization failed: $e');
     }
-    
-    runApp(
-      const ProviderScope(
-        child: TraceApp(),
-      ),
-    );
+
+    runApp(const ProviderScope(child: TraceApp()));
   } catch (e, stackTrace) {
     debugPrint('Initialization error: $e\n$stackTrace');
     runApp(
       MaterialApp(
         home: Scaffold(
           body: Center(
-            child: Text('Failed to initialize app: $e', style: const TextStyle(color: Colors.red)),
+            child: Text(
+              'Failed to initialize app: $e',
+              style: const TextStyle(color: Colors.red),
+            ),
           ),
         ),
       ),
@@ -61,7 +68,7 @@ class TraceApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
-    
+
     return MaterialApp.router(
       title: 'TRACE — Transparent Records & Attendance for Campus Events',
       debugShowCheckedModeBanner: false,
@@ -75,8 +82,8 @@ class TraceApp extends ConsumerWidget {
 class AppScrollBehavior extends MaterialScrollBehavior {
   @override
   Set<PointerDeviceKind> get dragDevices => {
-        PointerDeviceKind.touch,
-        PointerDeviceKind.mouse,
-        PointerDeviceKind.trackpad,
-      };
+    PointerDeviceKind.touch,
+    PointerDeviceKind.mouse,
+    PointerDeviceKind.trackpad,
+  };
 }

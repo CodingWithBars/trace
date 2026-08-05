@@ -14,9 +14,15 @@ class StudentsListScreen extends StatefulWidget {
 }
 
 class _StudentsListScreenState extends State<StudentsListScreen> {
-  String _selectedProgram = 'All';
+  String _selectedYear = 'All';
   bool _sortAscending = true;
-  final List<String> _programs = ['All', 'BSBA', 'BSA', 'BTLED', 'BSIT'];
+  final List<String> _years = [
+    'All',
+    '1st Year',
+    '2nd Year',
+    '3rd Year',
+    '4th Year',
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -49,31 +55,31 @@ class _StudentsListScreenState extends State<StudentsListScreen> {
               color: TraceColors.navyBlue,
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
               child: Row(
-                children: _programs.asMap().entries.map((entry) {
+                children: _years.asMap().entries.map((entry) {
                   final i = entry.key;
-                  final program = entry.value;
+                  final year = entry.value;
                   return Expanded(
                     child: GestureDetector(
-                      onTap: () => setState(() => _selectedProgram = program),
+                      onTap: () => setState(() => _selectedYear = year),
                       child: Container(
                         margin: EdgeInsets.only(
-                          right: i == _programs.length - 1 ? 0 : 8,
+                          right: i == _years.length - 1 ? 0 : 8,
                         ),
                         padding: const EdgeInsets.symmetric(vertical: 8),
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
-                          color: _selectedProgram == program
+                          color: _selectedYear == year
                               ? TraceColors.gold
                               : Colors.white.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(20),
-                          border: _selectedProgram == program
+                          border: _selectedYear == year
                               ? null
                               : Border.all(color: Colors.white24),
                         ),
                         child: Text(
-                          program,
+                          year,
                           style: GoogleFonts.inter(
-                            color: _selectedProgram == program
+                            color: _selectedYear == year
                                 ? TraceColors.navyBlue
                                 : TraceColors.white,
                             fontWeight: FontWeight.w600,
@@ -97,15 +103,14 @@ class _StudentsListScreenState extends State<StudentsListScreen> {
                   }
 
                   final allDocs = snap.data?.docs ?? [];
-                  final filteredDocs = _selectedProgram == 'All'
+                  final filteredDocs = _selectedYear == 'All'
                       ? allDocs
                       : allDocs.where((doc) {
-                          final course =
-                              (doc.data() as Map<String, dynamic>)['course']
-                                  ?.toString()
-                                  .toUpperCase() ??
+                          final yearLevel =
+                              (doc.data() as Map<String, dynamic>)['year_level']
+                                  ?.toString() ??
                               '';
-                          return course == _selectedProgram;
+                          return yearLevel == _selectedYear;
                         }).toList();
 
                   filteredDocs.sort((a, b) {
@@ -175,7 +180,7 @@ class _StudentsListScreenState extends State<StudentsListScreen> {
                         child: filteredDocs.isEmpty
                             ? Center(
                                 child: Text(
-                                  'No students found for this program.',
+                                  'No students found for this year level.',
                                   style: GoogleFonts.inter(
                                     color: TraceColors.medGrey,
                                   ),

@@ -20,15 +20,27 @@ class AttendanceEventsScreen extends StatelessWidget {
         future: EventService.getAllEvents(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: TraceColors.navyBlue));
+            return const Center(
+              child: CircularProgressIndicator(color: TraceColors.navyBlue),
+            );
           }
           if (snapshot.hasError) {
-            return Center(child: Text('Error loading events', style: GoogleFonts.inter(color: TraceColors.error)));
+            return Center(
+              child: Text(
+                'Error loading events',
+                style: GoogleFonts.inter(color: TraceColors.error),
+              ),
+            );
           }
-          
+
           final events = snapshot.data ?? [];
           if (events.isEmpty) {
-            return Center(child: Text('No events found.', style: GoogleFonts.inter(color: TraceColors.medGrey)));
+            return Center(
+              child: Text(
+                'No events found.',
+                style: GoogleFonts.inter(color: TraceColors.medGrey),
+              ),
+            );
           }
 
           return ListView.builder(
@@ -63,22 +75,38 @@ class AttendanceEventsScreen extends StatelessWidget {
                                 const SizedBox(height: 8),
                                 Row(
                                   children: [
-                                    const Icon(Icons.calendar_today, size: 14, color: TraceColors.gold),
+                                    const Icon(
+                                      Icons.calendar_today,
+                                      size: 14,
+                                      color: TraceColors.gold,
+                                    ),
                                     const SizedBox(width: 6),
                                     Text(
-                                      DateFormat('MMM dd, yyyy').format(event.date),
-                                      style: GoogleFonts.inter(fontSize: 13, color: TraceColors.medGrey),
+                                      DateFormat(
+                                        'MMM dd, yyyy',
+                                      ).format(event.date),
+                                      style: GoogleFonts.inter(
+                                        fontSize: 13,
+                                        color: TraceColors.medGrey,
+                                      ),
                                     ),
                                   ],
                                 ),
                                 const SizedBox(height: 6),
                                 Row(
                                   children: [
-                                    const Icon(Icons.access_time, size: 14, color: TraceColors.gold),
+                                    const Icon(
+                                      Icons.access_time,
+                                      size: 14,
+                                      color: TraceColors.gold,
+                                    ),
                                     const SizedBox(width: 6),
                                     Text(
                                       '${event.startTime} - ${event.endTime}',
-                                      style: GoogleFonts.inter(fontSize: 13, color: TraceColors.medGrey),
+                                      style: GoogleFonts.inter(
+                                        fontSize: 13,
+                                        color: TraceColors.medGrey,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -86,11 +114,18 @@ class AttendanceEventsScreen extends StatelessWidget {
                                   const SizedBox(height: 6),
                                   Row(
                                     children: [
-                                      const Icon(Icons.location_on, size: 14, color: TraceColors.gold),
+                                      const Icon(
+                                        Icons.location_on,
+                                        size: 14,
+                                        color: TraceColors.gold,
+                                      ),
                                       const SizedBox(width: 6),
                                       Text(
                                         event.venue,
-                                        style: GoogleFonts.inter(fontSize: 13, color: TraceColors.medGrey),
+                                        style: GoogleFonts.inter(
+                                          fontSize: 13,
+                                          color: TraceColors.medGrey,
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -98,7 +133,10 @@ class AttendanceEventsScreen extends StatelessWidget {
                               ],
                             ),
                           ),
-                          StatusChip(label: _getDynamicStatus(event), color: _getStatusColor(_getDynamicStatus(event))),
+                          StatusChip(
+                            label: _getDynamicStatus(event),
+                            color: _getStatusColor(_getDynamicStatus(event)),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 12),
@@ -110,9 +148,20 @@ class AttendanceEventsScreen extends StatelessWidget {
                           _AttendanceCount(eventId: event.id),
                           Row(
                             children: [
-                              Text('View Details', style: GoogleFonts.inter(fontSize: 12, color: TraceColors.navyBlue, fontWeight: FontWeight.w600)),
+                              Text(
+                                'View Details',
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  color: TraceColors.navyBlue,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                               const SizedBox(width: 4),
-                              const Icon(Icons.arrow_forward_ios, size: 12, color: TraceColors.navyBlue),
+                              const Icon(
+                                Icons.arrow_forward_ios,
+                                size: 12,
+                                color: TraceColors.navyBlue,
+                              ),
                             ],
                           ),
                         ],
@@ -131,38 +180,57 @@ class AttendanceEventsScreen extends StatelessWidget {
   String _getDynamicStatus(Event event) {
     if (event.status.toLowerCase() == 'completed') return 'COMPLETED';
     final now = DateTime.now();
-    
+
     DateTime? endTime;
     if (event.endTime != null && event.endTime!.isNotEmpty) {
       try {
         final t = DateFormat('h:mm a').parse(event.endTime!);
-        endTime = DateTime(event.date.year, event.date.month, event.date.day, t.hour, t.minute);
+        endTime = DateTime(
+          event.date.year,
+          event.date.month,
+          event.date.day,
+          t.hour,
+          t.minute,
+        );
       } catch (_) {
         try {
           final t = DateFormat('HH:mm').parse(event.endTime!);
-          endTime = DateTime(event.date.year, event.date.month, event.date.day, t.hour, t.minute);
+          endTime = DateTime(
+            event.date.year,
+            event.date.month,
+            event.date.day,
+            t.hour,
+            t.minute,
+          );
         } catch (_) {}
       }
     }
-    
+
     if (endTime != null && now.isAfter(endTime.add(const Duration(hours: 1)))) {
-       return 'COMPLETED';
+      return 'COMPLETED';
     }
-    
-    final isToday = event.date.year == now.year && event.date.month == now.month && event.date.day == now.day;
+
+    final isToday =
+        event.date.year == now.year &&
+        event.date.month == now.month &&
+        event.date.day == now.day;
     if (isToday) return 'ONGOING';
-    
+
     if (now.isAfter(event.date)) return 'COMPLETED';
-    
+
     return 'UPCOMING';
   }
 
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
-      case 'ongoing': return TraceColors.success;
-      case 'upcoming': return TraceColors.royalBlue;
-      case 'completed': return TraceColors.medGrey;
-      default: return TraceColors.medGrey;
+      case 'ongoing':
+        return TraceColors.success;
+      case 'upcoming':
+        return TraceColors.royalBlue;
+      case 'completed':
+        return TraceColors.medGrey;
+      default:
+        return TraceColors.medGrey;
     }
   }
 }
@@ -174,16 +242,30 @@ class _AttendanceCount extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FutureBuilder(
-      future: FirebaseFirestore.instance.collection('attendance').where('event_id', isEqualTo: eventId).get(),
+      future: FirebaseFirestore.instance
+          .collection('attendance')
+          .where('event_id', isEqualTo: eventId)
+          .get(),
       builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
         if (!snapshot.hasData) {
-          return Text('Attended: ...', style: GoogleFonts.inter(fontSize: 14, color: TraceColors.medGrey));
+          return Text(
+            'Attended: ...',
+            style: GoogleFonts.inter(fontSize: 14, color: TraceColors.medGrey),
+          );
         }
-        
-        final attendedCount = snapshot.data!.docs.map((d) => (d.data() as Map<String, dynamic>)['student_id']).toSet().length;
-        
-        return Text('Attended: $attendedCount', 
-          style: GoogleFonts.inter(fontSize: 14, color: TraceColors.navyBlue, fontWeight: FontWeight.w600)
+
+        final attendedCount = snapshot.data!.docs
+            .map((d) => (d.data() as Map<String, dynamic>)['student_id'])
+            .toSet()
+            .length;
+
+        return Text(
+          'Attended: $attendedCount',
+          style: GoogleFonts.inter(
+            fontSize: 14,
+            color: TraceColors.navyBlue,
+            fontWeight: FontWeight.w600,
+          ),
         );
       },
     );

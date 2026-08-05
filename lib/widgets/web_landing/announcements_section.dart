@@ -36,7 +36,10 @@ class _AnnouncementsSectionState extends State<AnnouncementsSection> {
             children: [
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: hPad),
-                child: buildSectionHeader('Announcements', TraceColors.navyBlue),
+                child: buildSectionHeader(
+                  'Announcements',
+                  TraceColors.navyBlue,
+                ),
               ),
               const SizedBox(height: 20),
               // Tabs

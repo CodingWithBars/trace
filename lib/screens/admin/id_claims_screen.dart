@@ -22,14 +22,32 @@ class IdClaimsScreen extends StatelessWidget {
             .orderBy('submitted_at', descending: true)
             .snapshots(),
         builder: (ctx, snap) {
-          if (!snap.hasData) return const Center(child: CircularProgressIndicator(color: TraceColors.navyBlue));
+          if (!snap.hasData)
+            return const Center(
+              child: CircularProgressIndicator(color: TraceColors.navyBlue),
+            );
           final docs = snap.data!.docs;
           if (docs.isEmpty) {
-            return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-              const Icon(Icons.verified_user_outlined, size: 64, color: TraceColors.lightGrey),
-              const SizedBox(height: 16),
-              Text('No pending claims', style: GoogleFonts.inter(fontSize: 18, color: TraceColors.medGrey)),
-            ]));
+            return Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.verified_user_outlined,
+                    size: 64,
+                    color: TraceColors.lightGrey,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'No pending claims',
+                    style: GoogleFonts.inter(
+                      fontSize: 18,
+                      color: TraceColors.medGrey,
+                    ),
+                  ),
+                ],
+              ),
+            );
           }
           return ListView.separated(
             padding: const EdgeInsets.all(16),
@@ -61,15 +79,23 @@ class _ClaimCardState extends State<_ClaimCard> {
 
   String _formatDate(dynamic ts) {
     if (ts == null) return '--';
-    try { return DateFormat('MMM dd, yyyy • h:mm a').format((ts as Timestamp).toDate()); }
-    catch (_) { return '--'; }
+    try {
+      return DateFormat(
+        'MMM dd, yyyy • h:mm a',
+      ).format((ts as Timestamp).toDate());
+    } catch (_) {
+      return '--';
+    }
   }
 
   Color _statusColor(String status) {
     switch (status) {
-      case 'approved': return TraceColors.success;
-      case 'rejected': return TraceColors.error;
-      default: return TraceColors.warning;
+      case 'approved':
+        return TraceColors.success;
+      case 'rejected':
+        return TraceColors.error;
+      default:
+        return TraceColors.warning;
     }
   }
 
@@ -82,15 +108,26 @@ class _ClaimCardState extends State<_ClaimCard> {
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: Colors.white,
-        title: Text('Approve Claim?', style: GoogleFonts.inter(fontWeight: FontWeight.w800, color: TraceColors.navyBlue)),
+        title: Text(
+          'Approve Claim?',
+          style: GoogleFonts.inter(
+            fontWeight: FontWeight.w800,
+            color: TraceColors.navyBlue,
+          ),
+        ),
         content: Text(
           'This will update Student ID "$claimedId":\n• Name → "$claimantName"\n• Email → "$claimantEmail"\n\nThis cannot be undone easily.',
           style: GoogleFonts.inter(fontSize: 14, color: TraceColors.navyBlue),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: TraceColors.success),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: TraceColors.success,
+            ),
             onPressed: () => Navigator.pop(context, true),
             child: const Text('Approve', style: TextStyle(color: Colors.white)),
           ),
@@ -101,7 +138,10 @@ class _ClaimCardState extends State<_ClaimCard> {
 
     setState(() => _isProcessing = true);
     try {
-      final snap = await FirestoreService.students.where('student_id', isEqualTo: claimedId).limit(1).get();
+      final snap = await FirestoreService.students
+          .where('student_id', isEqualTo: claimedId)
+          .limit(1)
+          .get();
       if (snap.docs.isEmpty) throw 'Student ID not found in database.';
       await StudentService.approveIdClaim(
         claimDocId: widget.docId,
@@ -111,14 +151,25 @@ class _ClaimCardState extends State<_ClaimCard> {
       );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Claim approved & student record updated.'), backgroundColor: TraceColors.success));
+          const SnackBar(
+            content: Text('Claim approved & student record updated.'),
+            backgroundColor: TraceColors.success,
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: TraceColors.error));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: TraceColors.error,
+          ),
+        );
       }
     }
-    if (mounted) { setState(() => _isProcessing = false); }
+    if (mounted) {
+      setState(() => _isProcessing = false);
+    }
   }
 
   Future<void> _reject() async {
@@ -126,10 +177,22 @@ class _ClaimCardState extends State<_ClaimCard> {
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: Colors.white,
-        title: Text('Reject Claim?', style: GoogleFonts.inter(fontWeight: FontWeight.w800, color: TraceColors.navyBlue)),
-        content: Text('This will mark the petition as rejected.', style: GoogleFonts.inter(fontSize: 14)),
+        title: Text(
+          'Reject Claim?',
+          style: GoogleFonts.inter(
+            fontWeight: FontWeight.w800,
+            color: TraceColors.navyBlue,
+          ),
+        ),
+        content: Text(
+          'This will mark the petition as rejected.',
+          style: GoogleFonts.inter(fontSize: 14),
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: TraceColors.error),
             onPressed: () => Navigator.pop(context, true),
@@ -141,7 +204,9 @@ class _ClaimCardState extends State<_ClaimCard> {
     if (confirm != true) return;
     setState(() => _isProcessing = true);
     await StudentService.rejectIdClaim(widget.docId);
-    if (mounted) { setState(() => _isProcessing = false); }
+    if (mounted) {
+      setState(() => _isProcessing = false);
+    }
   }
 
   @override
@@ -154,111 +219,232 @@ class _ClaimCardState extends State<_ClaimCard> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _statusColor(status).withValues(alpha: 0.3), width: 1.5),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))],
-      ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        // Header with status
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: _statusColor(status).withValues(alpha: 0.08),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
-          ),
-          child: Row(children: [
-            Text('Claim for ID: ', style: GoogleFonts.inter(fontSize: 13, color: TraceColors.medGrey)),
-            Text(widget.data['claimed_student_id'] ?? '--',
-              style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w800, color: TraceColors.navyBlue)),
-            const Spacer(),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(color: _statusColor(status).withValues(alpha: 0.15), borderRadius: BorderRadius.circular(20)),
-              child: Text(status.toUpperCase(), style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: _statusColor(status))),
-            ),
-          ]),
+        border: Border.all(
+          color: _statusColor(status).withValues(alpha: 0.3),
+          width: 1.5,
         ),
-
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            _row(Icons.person_outline, 'Name', widget.data['claimant_name'] ?? '--'),
-            const SizedBox(height: 8),
-            _row(Icons.email_outlined, 'Email', widget.data['claimant_email'] ?? '--'),
-            const SizedBox(height: 8),
-            _row(Icons.access_time, 'Submitted', _formatDate(widget.data['submitted_at'])),
-            const SizedBox(height: 12),
-            Text('Reason:', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: TraceColors.medGrey)),
-            const SizedBox(height: 4),
-            Text(widget.data['reason'] ?? '--',
-              style: GoogleFonts.inter(fontSize: 13, color: TraceColors.navyBlue, height: 1.5)),
-
-            // Proof image
-            if (proofUrl.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              Text('Proof:', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: TraceColors.medGrey)),
-              const SizedBox(height: 6),
-              GestureDetector(
-                onTap: () => _showFullImage(context, proofUrl),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: SizedBox(
-                    height: 140, width: double.infinity,
-                    child: proofUrl.startsWith('data:image')
-                        ? Image.memory(base64Decode(proofUrl.split(',').last), fit: BoxFit.cover)
-                        : Image.network(proofUrl, fit: BoxFit.cover),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header with status
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: _statusColor(status).withValues(alpha: 0.08),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(14),
+              ),
+            ),
+            child: Row(
+              children: [
+                Text(
+                  'Claim for ID: ',
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    color: TraceColors.medGrey,
                   ),
                 ),
-              ),
-            ],
+                Text(
+                  widget.data['claimed_student_id'] ?? '--',
+                  style: GoogleFonts.inter(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: TraceColors.navyBlue,
+                  ),
+                ),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _statusColor(status).withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    status.toUpperCase(),
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: _statusColor(status),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
 
-            if (isPending) ...[
-              const SizedBox(height: 16),
-              _isProcessing
-                  ? const Center(child: CircularProgressIndicator(color: TraceColors.navyBlue))
-                  : Row(children: [
-                      Expanded(child: OutlinedButton.icon(
-                        onPressed: _reject,
-                        icon: const Icon(Icons.close, size: 16),
-                        label: const Text('Reject'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: TraceColors.error,
-                          side: const BorderSide(color: TraceColors.error),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _row(
+                  Icons.person_outline,
+                  'Name',
+                  widget.data['claimant_name'] ?? '--',
+                ),
+                const SizedBox(height: 8),
+                _row(
+                  Icons.email_outlined,
+                  'Email',
+                  widget.data['claimant_email'] ?? '--',
+                ),
+                const SizedBox(height: 8),
+                _row(
+                  Icons.access_time,
+                  'Submitted',
+                  _formatDate(widget.data['submitted_at']),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Reason:',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: TraceColors.medGrey,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  widget.data['reason'] ?? '--',
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    color: TraceColors.navyBlue,
+                    height: 1.5,
+                  ),
+                ),
+
+                // Proof image
+                if (proofUrl.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    'Proof:',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: TraceColors.medGrey,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  GestureDetector(
+                    onTap: () => _showFullImage(context, proofUrl),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: SizedBox(
+                        height: 140,
+                        width: double.infinity,
+                        child: proofUrl.startsWith('data:image')
+                            ? Image.memory(
+                                base64Decode(proofUrl.split(',').last),
+                                fit: BoxFit.cover,
+                              )
+                            : Image.network(proofUrl, fit: BoxFit.cover),
+                      ),
+                    ),
+                  ),
+                ],
+
+                if (isPending) ...[
+                  const SizedBox(height: 16),
+                  _isProcessing
+                      ? const Center(
+                          child: CircularProgressIndicator(
+                            color: TraceColors.navyBlue,
+                          ),
+                        )
+                      : Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: _reject,
+                                icon: const Icon(Icons.close, size: 16),
+                                label: const Text('Reject'),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: TraceColors.error,
+                                  side: const BorderSide(
+                                    color: TraceColors.error,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed: _approve,
+                                icon: const Icon(
+                                  Icons.check,
+                                  size: 16,
+                                  color: Colors.white,
+                                ),
+                                label: const Text(
+                                  'Approve',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: TraceColors.success,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      )),
-                      const SizedBox(width: 12),
-                      Expanded(child: ElevatedButton.icon(
-                        onPressed: _approve,
-                        icon: const Icon(Icons.check, size: 16, color: Colors.white),
-                        label: const Text('Approve', style: TextStyle(color: Colors.white)),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: TraceColors.success,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        ),
-                      )),
-                    ]),
-            ],
-          ]),
-        ),
-      ]),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _row(IconData icon, String label, String value) {
-    return Row(children: [
-      Icon(icon, size: 16, color: TraceColors.medGrey),
-      const SizedBox(width: 8),
-      Text('$label: ', style: GoogleFonts.inter(fontSize: 13, color: TraceColors.medGrey)),
-      Expanded(child: Text(value, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: TraceColors.navyBlue), overflow: TextOverflow.ellipsis)),
-    ]);
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: TraceColors.medGrey),
+        const SizedBox(width: 8),
+        Text(
+          '$label: ',
+          style: GoogleFonts.inter(fontSize: 13, color: TraceColors.medGrey),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: TraceColors.navyBlue,
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
   }
 
   void _showFullImage(BuildContext ctx, String url) {
-    showDialog(context: ctx, builder: (_) => Dialog(
-      backgroundColor: Colors.black,
-      child: url.startsWith('data:image')
-          ? Image.memory(base64Decode(url.split(',').last))
-          : Image.network(url),
-    ));
+    showDialog(
+      context: ctx,
+      builder: (_) => Dialog(
+        backgroundColor: Colors.black,
+        child: url.startsWith('data:image')
+            ? Image.memory(base64Decode(url.split(',').last))
+            : Image.network(url),
+      ),
+    );
   }
 }

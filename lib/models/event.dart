@@ -13,7 +13,7 @@ class Event {
   // Scheduled base times (stored as "HH:mm" strings)
   final String? startTime;
   final String? endTime;
-  
+
   final bool isWholeDay;
   final bool isPmOnly;
   final bool isAmOnly;
@@ -50,8 +50,12 @@ class Event {
       eventName: data['event_name'] ?? '',
       description: data['description'] ?? '',
       venue: data['venue'] ?? '',
-      date: data['date'] != null ? (data['date'] as dynamic).toDate() : DateTime.now(),
-      cutOffTime: data['cut_off_time'] != null ? (data['cut_off_time'] as dynamic).toDate() : null,
+      date: data['date'] != null
+          ? (data['date'] as dynamic).toDate()
+          : DateTime.now(),
+      cutOffTime: data['cut_off_time'] != null
+          ? (data['cut_off_time'] as dynamic).toDate()
+          : null,
       timeInClosed: data['time_in_closed'] ?? false,
       status: data['status'] ?? 'upcoming',
       bannerUrl: data['banner_url'] ?? '',
@@ -69,36 +73,48 @@ class Event {
 
   String get computedStatus {
     if (status == 'completed' || status == 'cancelled') return status;
-    
+
     final endStr = endTime;
     final startStr = startTime;
-    
+
     if (endStr == null || endStr.isEmpty) return status;
-    
+
     try {
       final endParts = endStr.split(':');
       final endHour = int.parse(endParts[0]);
       final endMinute = int.parse(endParts[1]);
-      final endDateTime = DateTime(date.year, date.month, date.day, endHour, endMinute);
-      
+      final endDateTime = DateTime(
+        date.year,
+        date.month,
+        date.day,
+        endHour,
+        endMinute,
+      );
+
       final now = DateTime.now();
-      
+
       if (now.isAfter(endDateTime)) {
         return 'completed';
       }
-      
+
       if (startStr != null && startStr.isNotEmpty) {
         final startParts = startStr.split(':');
         final startHour = int.parse(startParts[0]);
         final startMinute = int.parse(startParts[1]);
-        final startDateTime = DateTime(date.year, date.month, date.day, startHour, startMinute);
-        
+        final startDateTime = DateTime(
+          date.year,
+          date.month,
+          date.day,
+          startHour,
+          startMinute,
+        );
+
         if (now.isAfter(startDateTime) && now.isBefore(endDateTime)) {
           return 'ongoing';
         }
       }
     } catch (_) {}
-    
+
     return status;
   }
 

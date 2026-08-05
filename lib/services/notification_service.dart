@@ -30,15 +30,13 @@ class NotificationService {
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
     // Request permission
-    await _messaging.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
+    await _messaging.requestPermission(alert: true, badge: true, sound: true);
 
     // Android local notification channel
     await _localNotifications
-        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >()
         ?.createNotificationChannel(_androidChannel);
 
     // Init local notifications
@@ -106,7 +104,13 @@ class NotificationService {
   }
 
   static Future<void> unsubscribeAll() async {
-    for (final topic in ['students', 'events', 'announcements', 'admin', 'claims']) {
+    for (final topic in [
+      'students',
+      'events',
+      'announcements',
+      'admin',
+      'claims',
+    ]) {
       await _messaging.unsubscribeFromTopic(topic);
     }
   }

@@ -52,7 +52,10 @@ class StudentService {
     }
   }
 
-  static Future<String?> uploadAvatar(Uint8List imageBytes, String studentId) async {
+  static Future<String?> uploadAvatar(
+    Uint8List imageBytes,
+    String studentId,
+  ) async {
     try {
       final base64String = base64Encode(imageBytes);
       return 'data:image/jpeg;base64,$base64String';
@@ -70,7 +73,10 @@ class StudentService {
           .limit(1)
           .get();
       if (snap.docs.isEmpty) return null;
-      return Student.fromMap(snap.docs.first.data() as Map<String, dynamic>, snap.docs.first.id);
+      return Student.fromMap(
+        snap.docs.first.data() as Map<String, dynamic>,
+        snap.docs.first.id,
+      );
     } catch (e) {
       return null;
     }
@@ -83,7 +89,10 @@ class StudentService {
           .limit(1)
           .get();
       if (snap.docs.isEmpty) return null;
-      return Student.fromMap(snap.docs.first.data() as Map<String, dynamic>, snap.docs.first.id);
+      return Student.fromMap(
+        snap.docs.first.data() as Map<String, dynamic>,
+        snap.docs.first.id,
+      );
     } catch (e) {
       return null;
     }
@@ -96,26 +105,45 @@ class StudentService {
           .limit(1)
           .get();
       if (snap.docs.isEmpty) return null;
-      return Student.fromMap(snap.docs.first.data() as Map<String, dynamic>, snap.docs.first.id);
+      return Student.fromMap(
+        snap.docs.first.data() as Map<String, dynamic>,
+        snap.docs.first.id,
+      );
     } catch (e) {
       return null;
     }
   }
 
-  static Future<List<Attendance>> getAttendanceForStudent(String studentId) async {
+  static Future<List<Attendance>> getAttendanceForStudent(
+    String studentId,
+  ) async {
     try {
       final snap = await FirestoreService.attendance
           .where('student_id', isEqualTo: studentId)
           .get();
-      
-      final list = snap.docs.map((d) => Attendance.fromMap(d.data() as Map<String, dynamic>, d.id)).toList();
-      
+
+      final list = snap.docs
+          .map(
+            (d) => Attendance.fromMap(d.data() as Map<String, dynamic>, d.id),
+          )
+          .toList();
+
       list.sort((a, b) {
-        final dateA = a.timeInAm ?? a.timeInPm ?? a.timeOutAm ?? a.timeOutPm ?? DateTime.now();
-        final dateB = b.timeInAm ?? b.timeInPm ?? b.timeOutAm ?? b.timeOutPm ?? DateTime.now();
+        final dateA =
+            a.timeInAm ??
+            a.timeInPm ??
+            a.timeOutAm ??
+            a.timeOutPm ??
+            DateTime.now();
+        final dateB =
+            b.timeInAm ??
+            b.timeInPm ??
+            b.timeOutAm ??
+            b.timeOutPm ??
+            DateTime.now();
         return dateB.compareTo(dateA); // descending
       });
-      
+
       return list;
     } catch (e) {
       debugPrint('Error getting attendance: $e');
@@ -125,7 +153,10 @@ class StudentService {
 
   /// Returns true if the given studentId is already used by another document.
   /// [excludeDocId] is the current student's Firestore doc ID so they can keep their own ID.
-  static Future<bool> isStudentIdTaken(String studentId, {String? excludeDocId}) async {
+  static Future<bool> isStudentIdTaken(
+    String studentId, {
+    String? excludeDocId,
+  }) async {
     try {
       final snap = await FirestoreService.students
           .where('student_id', isEqualTo: studentId)
@@ -146,10 +177,7 @@ class StudentService {
     required String studentId,
     String? avatarUrl,
   }) async {
-    final data = <String, dynamic>{
-      'name': name,
-      'student_id': studentId,
-    };
+    final data = <String, dynamic>{'name': name, 'student_id': studentId};
     if (avatarUrl != null) data['avatar_url'] = avatarUrl;
     await FirestoreService.students.doc(docId).update(data);
     await ActivityLogService.log(
@@ -180,7 +208,8 @@ class StudentService {
     });
     await ActivityLogService.log(
       action: 'id_claim_submitted',
-      message: 'ID claim submitted by $claimantName for Student ID: $claimedStudentId',
+      message:
+          'ID claim submitted by $claimantName for Student ID: $claimedStudentId',
       entityType: 'claim',
       actorName: claimantName,
     );
@@ -205,14 +234,16 @@ class StudentService {
     await batch.commit();
     await ActivityLogService.log(
       action: 'id_claim_approved',
-      message: 'ID claim APPROVED: Student record updated for $newName ($newEmail)',
+      message:
+          'ID claim APPROVED: Student record updated for $newName ($newEmail)',
       entityType: 'claim',
       entityId: claimDocId,
       actorName: 'Admin',
     );
     await NotificationService.createInAppNotification(
       title: 'ID Claim Approved',
-      body: 'Your claim for Student ID has been approved. Name updated to: $newName',
+      body:
+          'Your claim for Student ID has been approved. Name updated to: $newName',
       targetRole: 'student',
       entityType: 'claim',
       entityId: claimDocId,
@@ -234,4 +265,3 @@ class StudentService {
     );
   }
 }
-

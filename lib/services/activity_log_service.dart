@@ -17,9 +17,11 @@ class ActivityLogService {
     try {
       String resolvedActor = actorName ?? 'System';
       final email = FirebaseAuth.instance.currentUser?.email;
-      
+
       if (email != null && email.isNotEmpty) {
-        if (resolvedActor == 'Admin' || resolvedActor == 'System' || resolvedActor == 'Scanner') {
+        if (resolvedActor == 'Admin' ||
+            resolvedActor == 'System' ||
+            resolvedActor == 'Scanner') {
           resolvedActor = email;
         } else if (resolvedActor != email && !resolvedActor.contains(email)) {
           // If the actor is something else, maybe append the email for clarity

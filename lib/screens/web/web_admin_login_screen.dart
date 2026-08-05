@@ -9,10 +9,12 @@ class WebAdminLoginScreen extends ConsumerStatefulWidget {
   const WebAdminLoginScreen({super.key});
 
   @override
-  ConsumerState<WebAdminLoginScreen> createState() => _WebAdminLoginScreenState();
+  ConsumerState<WebAdminLoginScreen> createState() =>
+      _WebAdminLoginScreenState();
 }
 
-class _WebAdminLoginScreenState extends ConsumerState<WebAdminLoginScreen> with SingleTickerProviderStateMixin {
+class _WebAdminLoginScreenState extends ConsumerState<WebAdminLoginScreen>
+    with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -24,7 +26,10 @@ class _WebAdminLoginScreenState extends ConsumerState<WebAdminLoginScreen> with 
   @override
   void initState() {
     super.initState();
-    _animController = AnimationController(vsync: this, duration: const Duration(milliseconds: 800));
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
     _fadeAnim = CurvedAnimation(parent: _animController, curve: Curves.easeOut);
     _animController.forward();
   }
@@ -47,16 +52,22 @@ class _WebAdminLoginScreenState extends ConsumerState<WebAdminLoginScreen> with 
     );
     if (!mounted) return;
     if (error != null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Row(children: [
-          const Icon(Icons.error_outline, color: Colors.white),
-          const SizedBox(width: 10),
-          Text(error),
-        ]),
-        backgroundColor: TraceColors.error,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.error_outline, color: Colors.white),
+              const SizedBox(width: 10),
+              Text(error),
+            ],
+          ),
+          backgroundColor: TraceColors.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
       setState(() => _isLoading = false);
     } else {
       context.go('/admin/dashboard');
@@ -70,19 +81,33 @@ class _WebAdminLoginScreenState extends ConsumerState<WebAdminLoginScreen> with 
       body: Stack(
         children: [
           // Background decorations
-          Positioned(top: -100, right: -100,
-            child: Container(width: 350, height: 350,
+          Positioned(
+            top: -100,
+            right: -100,
+            child: Container(
+              width: 350,
+              height: 350,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: TraceColors.gold.withValues(alpha: 0.08), width: 60),
+                border: Border.all(
+                  color: TraceColors.gold.withValues(alpha: 0.08),
+                  width: 60,
+                ),
               ),
             ),
           ),
-          Positioned(bottom: -120, left: -80,
-            child: Container(width: 400, height: 400,
+          Positioned(
+            bottom: -120,
+            left: -80,
+            child: Container(
+              width: 400,
+              height: 400,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: TraceColors.gold.withValues(alpha: 0.06), width: 70),
+                border: Border.all(
+                  color: TraceColors.gold.withValues(alpha: 0.06),
+                  width: 70,
+                ),
               ),
             ),
           ),
@@ -102,20 +127,33 @@ class _WebAdminLoginScreenState extends ConsumerState<WebAdminLoginScreen> with 
                           padding: const EdgeInsets.all(20),
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            border: Border.all(color: TraceColors.gold, width: 2),
+                            border: Border.all(
+                              color: TraceColors.gold,
+                              width: 2,
+                            ),
                             color: TraceColors.gold.withValues(alpha: 0.1),
                           ),
                           child: ShaderMask(
-                            shaderCallback: (b) => TraceColors.goldGradient.createShader(b),
-                            child: const Icon(Icons.shield_rounded, size: 44, color: Colors.white),
+                            shaderCallback: (b) =>
+                                TraceColors.goldGradient.createShader(b),
+                            child: const Icon(
+                              Icons.shield_rounded,
+                              size: 44,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 20),
                         Image.asset('assets/trace-logo3.png', height: 64),
                         const SizedBox(height: 4),
-                        Text('Officer Administration Portal', style: GoogleFonts.inter(
-                          fontSize: 13, color: TraceColors.white.withValues(alpha: 0.5), letterSpacing: 1,
-                        )),
+                        Text(
+                          'Officer Administration Portal',
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            color: TraceColors.white.withValues(alpha: 0.5),
+                            letterSpacing: 1,
+                          ),
+                        ),
                         const SizedBox(height: 40),
                         // Login Card
                         Container(
@@ -123,21 +161,34 @@ class _WebAdminLoginScreenState extends ConsumerState<WebAdminLoginScreen> with 
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(24),
-                            boxShadow: [BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.3), blurRadius: 40,
-                            )],
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.3),
+                                blurRadius: 40,
+                              ),
+                            ],
                           ),
                           child: Form(
                             key: _formKey,
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text('Sign In', style: GoogleFonts.inter(
-                                  fontSize: 24, fontWeight: FontWeight.w800, color: TraceColors.navyBlue,
-                                )),
+                                Text(
+                                  'Sign In',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.w800,
+                                    color: TraceColors.navyBlue,
+                                  ),
+                                ),
                                 const SizedBox(height: 4),
-                                Text('Authorized officers only.',
-                                  style: GoogleFonts.inter(fontSize: 13, color: TraceColors.medGrey)),
+                                Text(
+                                  'Authorized officers only.',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 13,
+                                    color: TraceColors.medGrey,
+                                  ),
+                                ),
                                 const SizedBox(height: 28),
                                 TextFormField(
                                   controller: _emailController,
@@ -147,8 +198,10 @@ class _WebAdminLoginScreenState extends ConsumerState<WebAdminLoginScreen> with 
                                     prefixIcon: Icon(Icons.email_outlined),
                                   ),
                                   validator: (v) {
-                                    if (v == null || v.isEmpty) return 'Email is required';
-                                    if (!v.contains('@')) return 'Invalid email';
+                                    if (v == null || v.isEmpty)
+                                      return 'Email is required';
+                                    if (!v.contains('@'))
+                                      return 'Invalid email';
                                     return null;
                                   },
                                 ),
@@ -158,16 +211,25 @@ class _WebAdminLoginScreenState extends ConsumerState<WebAdminLoginScreen> with 
                                   obscureText: _obscurePassword,
                                   decoration: InputDecoration(
                                     labelText: 'Password',
-                                    prefixIcon: const Icon(Icons.lock_outline_rounded),
+                                    prefixIcon: const Icon(
+                                      Icons.lock_outline_rounded,
+                                    ),
                                     suffixIcon: IconButton(
                                       icon: Icon(
-                                        _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                                        _obscurePassword
+                                            ? Icons.visibility_off_outlined
+                                            : Icons.visibility_outlined,
                                         color: TraceColors.medGrey,
                                       ),
-                                      onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                                      onPressed: () => setState(
+                                        () => _obscurePassword =
+                                            !_obscurePassword,
+                                      ),
                                     ),
                                   ),
-                                  validator: (v) => v == null || v.isEmpty ? 'Password is required' : null,
+                                  validator: (v) => v == null || v.isEmpty
+                                      ? 'Password is required'
+                                      : null,
                                   onFieldSubmitted: (_) => _login(),
                                 ),
                                 const SizedBox(height: 28),
@@ -178,14 +240,29 @@ class _WebAdminLoginScreenState extends ConsumerState<WebAdminLoginScreen> with 
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: TraceColors.navyBlue,
                                       foregroundColor: TraceColors.white,
-                                      padding: const EdgeInsets.symmetric(vertical: 16),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 16,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
                                     ),
                                     child: _isLoading
-                                        ? const SizedBox(width: 20, height: 20,
-                                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                                        : Text('Sign In to TRACE', style: GoogleFonts.inter(
-                                            fontWeight: FontWeight.w700, fontSize: 15)),
+                                        ? const SizedBox(
+                                            width: 20,
+                                            height: 20,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: Colors.white,
+                                            ),
+                                          )
+                                        : Text(
+                                            'Sign In to TRACE',
+                                            style: GoogleFonts.inter(
+                                              fontWeight: FontWeight.w700,
+                                              fontSize: 15,
+                                            ),
+                                          ),
                                   ),
                                 ),
                               ],
@@ -195,12 +272,24 @@ class _WebAdminLoginScreenState extends ConsumerState<WebAdminLoginScreen> with 
                         const SizedBox(height: 24),
                         TextButton(
                           onPressed: () => context.go('/'),
-                          child: Row(mainAxisSize: MainAxisSize.min, children: [
-                            const Icon(Icons.arrow_back_rounded, color: TraceColors.lightGrey, size: 16),
-                            const SizedBox(width: 6),
-                            Text('Back to Landing Page',
-                              style: GoogleFonts.inter(color: TraceColors.lightGrey, fontSize: 13)),
-                          ]),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.arrow_back_rounded,
+                                color: TraceColors.lightGrey,
+                                size: 16,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Back to Landing Page',
+                                style: GoogleFonts.inter(
+                                  color: TraceColors.lightGrey,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),

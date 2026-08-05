@@ -68,7 +68,9 @@ class HeroSection extends ConsumerWidget {
                         ),
                       ),
                       const SizedBox(width: 60),
-                      Expanded(child: _buildUpcomingEventCard(context, isWide: true)),
+                      Expanded(
+                        child: _buildUpcomingEventCard(context, isWide: true),
+                      ),
                     ],
                   )
                 : Column(
@@ -382,7 +384,10 @@ class HeroSection extends ConsumerWidget {
     );
   }
 
-  Widget _buildSingleEventCard(BuildContext context, Map<String, dynamic>? data) {
+  Widget _buildSingleEventCard(
+    BuildContext context,
+    Map<String, dynamic>? data,
+  ) {
     final hasEvent = data != null;
     if (!hasEvent) {
       return Container(
@@ -676,8 +681,18 @@ class HeroSection extends ConsumerWidget {
 
   String _formatDate(DateTime dt) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return '${months[dt.month - 1]} ${dt.day}, ${dt.year}';
   }

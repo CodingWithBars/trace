@@ -31,7 +31,8 @@ class WebAdminDashboardScreen extends ConsumerStatefulWidget {
       _WebAdminDashboardScreenState();
 }
 
-class _WebAdminDashboardScreenState extends ConsumerState<WebAdminDashboardScreen> {
+class _WebAdminDashboardScreenState
+    extends ConsumerState<WebAdminDashboardScreen> {
   int _selectedIndex = 0;
   String _fundSearchQuery = '';
   String _fundSortOption = 'Newest';
@@ -48,9 +49,9 @@ class _WebAdminDashboardScreenState extends ConsumerState<WebAdminDashboardScree
 
   late final Stream<QuerySnapshot> _fundsStream;
 
-  bool get _canManageFunds {
-    final email = ref.read(authServiceProvider).currentUser?.email;
-    return email == 'iitsoofficer@dorsu.bc' || email == 'auditor@scbc.dorsu';
+  bool _canManageFunds(WidgetRef ref) {
+    final role = ref.watch(adminRoleProvider).value;
+    return role == 'superadmin' || role == 'auditor';
   }
 
   @override
@@ -172,13 +173,18 @@ class _WebAdminDashboardScreenState extends ConsumerState<WebAdminDashboardScree
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               StreamBuilder<DocumentSnapshot>(
-                stream: FirestoreService.admins.doc(authService.currentUser?.uid).snapshots(),
+                stream: FirestoreService.admins
+                    .doc(authService.currentUser?.uid)
+                    .snapshots(),
                 builder: (context, snapshot) {
                   String? b64;
                   if (snapshot.hasData && snapshot.data!.exists) {
-                    b64 = (snapshot.data!.data() as Map<String, dynamic>)['profile_image_base64'] as String?;
+                    b64 =
+                        (snapshot.data!.data()
+                                as Map<String, dynamic>)['profile_image_base64']
+                            as String?;
                   }
-                  
+
                   if (b64 != null && b64.isNotEmpty) {
                     return Container(
                       width: 52,
@@ -193,7 +199,7 @@ class _WebAdminDashboardScreenState extends ConsumerState<WebAdminDashboardScree
                       ),
                     );
                   }
-                  
+
                   return Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
@@ -375,46 +381,94 @@ class _WebAdminDashboardScreenState extends ConsumerState<WebAdminDashboardScree
           .orderBy('submitted_at', descending: true)
           .snapshots(),
       builder: (ctx, snap) {
-        if (!snap.hasData) return const Center(child: CircularProgressIndicator());
+        if (!snap.hasData)
+          return const Center(child: CircularProgressIndicator());
         final docs = snap.data!.docs;
-        final pending = docs.where((d) => (d.data() as Map<String, dynamic>)['status'] == 'pending').length;
-        return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-            child: Row(children: [
-              Text('ID Claim Petitions', style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w800, color: TraceColors.navyBlue)),
-              const Spacer(),
-              if (pending > 0)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(color: TraceColors.error, borderRadius: BorderRadius.circular(20)),
-                  child: Text('$pending pending', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white)),
+        final pending = docs
+            .where(
+              (d) => (d.data() as Map<String, dynamic>)['status'] == 'pending',
+            )
+            .length;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+              child: Row(
+                children: [
+                  Text(
+                    'ID Claim Petitions',
+                    style: GoogleFonts.inter(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      color: TraceColors.navyBlue,
+                    ),
+                  ),
+                  const Spacer(),
+                  if (pending > 0)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: TraceColors.error,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        '$pending pending',
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            if (docs.isEmpty)
+              Expanded(
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.verified_user_outlined,
+                        size: 64,
+                        color: TraceColors.lightGrey,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'No claims submitted yet',
+                        style: GoogleFonts.inter(
+                          fontSize: 16,
+                          color: TraceColors.medGrey,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-            ]),
-          ),
-          const SizedBox(height: 16),
-          if (docs.isEmpty)
-            Expanded(child: Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-              const Icon(Icons.verified_user_outlined, size: 64, color: TraceColors.lightGrey),
-              const SizedBox(height: 16),
-              Text('No claims submitted yet', style: GoogleFonts.inter(fontSize: 16, color: TraceColors.medGrey)),
-            ])))
-          else
-            Expanded(child: ListView.separated(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              itemCount: docs.length,
-              separatorBuilder: (_, _) => const SizedBox(height: 12),
-              itemBuilder: (ctx, i) {
-                final doc = docs[i];
-                final data = doc.data() as Map<String, dynamic>;
-                return _AdminClaimCard(docId: doc.id, data: data);
-              },
-            )),
-        ]);
+              )
+            else
+              Expanded(
+                child: ListView.separated(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  itemCount: docs.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 12),
+                  itemBuilder: (ctx, i) {
+                    final doc = docs[i];
+                    final data = doc.data() as Map<String, dynamic>;
+                    return _AdminClaimCard(docId: doc.id, data: data);
+                  },
+                ),
+              ),
+          ],
+        );
       },
     );
   }
-
 
   String? _formatTimeOfDay(TimeOfDay? t) {
     if (t == null) return null;
@@ -437,7 +491,7 @@ class _WebAdminDashboardScreenState extends ConsumerState<WebAdminDashboardScree
     // Base scheduled times
     TimeOfDay? startTime = _parseTimeOfDay(event?.startTime);
     TimeOfDay? endTime = _parseTimeOfDay(event?.endTime);
-    
+
     // Restored AM/PM times
     TimeOfDay? mIn = _parseTimeOfDay(event?.morningTimeIn);
     TimeOfDay? mOut = _parseTimeOfDay(event?.morningTimeOut);
@@ -606,7 +660,9 @@ class _WebAdminDashboardScreenState extends ConsumerState<WebAdminDashboardScree
                           child: timeTile('Overall Start', startTime, () async {
                             final t = await showTimePicker(
                               context: ctx,
-                              initialTime: startTime ?? const TimeOfDay(hour: 8, minute: 0),
+                              initialTime:
+                                  startTime ??
+                                  const TimeOfDay(hour: 8, minute: 0),
                             );
                             if (t != null) setDState(() => startTime = t);
                           }),
@@ -615,7 +671,9 @@ class _WebAdminDashboardScreenState extends ConsumerState<WebAdminDashboardScree
                           child: timeTile('Overall End', endTime, () async {
                             final t = await showTimePicker(
                               context: ctx,
-                              initialTime: endTime ?? const TimeOfDay(hour: 17, minute: 0),
+                              initialTime:
+                                  endTime ??
+                                  const TimeOfDay(hour: 17, minute: 0),
                             );
                             if (t != null) setDState(() => endTime = t);
                           }),
@@ -628,30 +686,56 @@ class _WebAdminDashboardScreenState extends ConsumerState<WebAdminDashboardScree
                     DropdownButtonFormField<String>(
                       initialValue: eventType,
                       items: const [
-                        DropdownMenuItem(value: 'Whole Day', child: Text('Whole Day Event')),
-                        DropdownMenuItem(value: 'Morning', child: Text('Morning Only')),
-                        DropdownMenuItem(value: 'Afternoon', child: Text('Afternoon Only')),
+                        DropdownMenuItem(
+                          value: 'Whole Day',
+                          child: Text('Whole Day Event'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'Morning',
+                          child: Text('Morning Only'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'Afternoon',
+                          child: Text('Afternoon Only'),
+                        ),
                       ],
                       onChanged: (val) {
                         if (val != null) setDState(() => eventType = val);
                       },
-                      decoration: const InputDecoration(labelText: 'Event Type'),
+                      decoration: const InputDecoration(
+                        labelText: 'Event Type',
+                      ),
                     ),
                     const SizedBox(height: 16),
                     if (eventType == 'Whole Day' || eventType == 'Morning') ...[
-                      Text('Morning Session', style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: TraceColors.navyBlue)),
+                      Text(
+                        'Morning Session',
+                        style: GoogleFonts.inter(
+                          fontWeight: FontWeight.bold,
+                          color: TraceColors.navyBlue,
+                        ),
+                      ),
                       const SizedBox(height: 8),
                       Row(
                         children: [
                           Expanded(
                             child: timeTile('Morning In', mIn, () async {
-                              final t = await showTimePicker(context: ctx, initialTime: mIn ?? const TimeOfDay(hour: 8, minute: 0));
+                              final t = await showTimePicker(
+                                context: ctx,
+                                initialTime:
+                                    mIn ?? const TimeOfDay(hour: 8, minute: 0),
+                              );
                               if (t != null) setDState(() => mIn = t);
                             }),
                           ),
                           Expanded(
                             child: timeTile('Morning Out', mOut, () async {
-                              final t = await showTimePicker(context: ctx, initialTime: mOut ?? const TimeOfDay(hour: 12, minute: 0));
+                              final t = await showTimePicker(
+                                context: ctx,
+                                initialTime:
+                                    mOut ??
+                                    const TimeOfDay(hour: 12, minute: 0),
+                              );
                               if (t != null) setDState(() => mOut = t);
                             }),
                           ),
@@ -659,20 +743,36 @@ class _WebAdminDashboardScreenState extends ConsumerState<WebAdminDashboardScree
                       ),
                       const SizedBox(height: 12),
                     ],
-                    if (eventType == 'Whole Day' || eventType == 'Afternoon') ...[
-                      Text('Afternoon Session', style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: TraceColors.navyBlue)),
+                    if (eventType == 'Whole Day' ||
+                        eventType == 'Afternoon') ...[
+                      Text(
+                        'Afternoon Session',
+                        style: GoogleFonts.inter(
+                          fontWeight: FontWeight.bold,
+                          color: TraceColors.navyBlue,
+                        ),
+                      ),
                       const SizedBox(height: 8),
                       Row(
                         children: [
                           Expanded(
                             child: timeTile('Afternoon In', aIn, () async {
-                              final t = await showTimePicker(context: ctx, initialTime: aIn ?? const TimeOfDay(hour: 13, minute: 0));
+                              final t = await showTimePicker(
+                                context: ctx,
+                                initialTime:
+                                    aIn ?? const TimeOfDay(hour: 13, minute: 0),
+                              );
                               if (t != null) setDState(() => aIn = t);
                             }),
                           ),
                           Expanded(
                             child: timeTile('Afternoon Out', aOut, () async {
-                              final t = await showTimePicker(context: ctx, initialTime: aOut ?? const TimeOfDay(hour: 17, minute: 0));
+                              final t = await showTimePicker(
+                                context: ctx,
+                                initialTime:
+                                    aOut ??
+                                    const TimeOfDay(hour: 17, minute: 0),
+                              );
                               if (t != null) setDState(() => aOut = t);
                             }),
                           ),
@@ -703,10 +803,22 @@ class _WebAdminDashboardScreenState extends ConsumerState<WebAdminDashboardScree
                     'is_whole_day': eventType == 'Whole Day',
                     'is_pm_only': eventType == 'Afternoon',
                     'is_am_only': eventType == 'Morning',
-                    'morning_time_in': (eventType == 'Whole Day' || eventType == 'Morning') ? _formatTimeOfDay(mIn) : null,
-                    'morning_time_out': (eventType == 'Whole Day' || eventType == 'Morning') ? _formatTimeOfDay(mOut) : null,
-                    'afternoon_time_in': (eventType == 'Whole Day' || eventType == 'Afternoon') ? _formatTimeOfDay(aIn) : null,
-                    'afternoon_time_out': (eventType == 'Whole Day' || eventType == 'Afternoon') ? _formatTimeOfDay(aOut) : null,
+                    'morning_time_in':
+                        (eventType == 'Whole Day' || eventType == 'Morning')
+                        ? _formatTimeOfDay(mIn)
+                        : null,
+                    'morning_time_out':
+                        (eventType == 'Whole Day' || eventType == 'Morning')
+                        ? _formatTimeOfDay(mOut)
+                        : null,
+                    'afternoon_time_in':
+                        (eventType == 'Whole Day' || eventType == 'Afternoon')
+                        ? _formatTimeOfDay(aIn)
+                        : null,
+                    'afternoon_time_out':
+                        (eventType == 'Whole Day' || eventType == 'Afternoon')
+                        ? _formatTimeOfDay(aOut)
+                        : null,
                     'banner_url': coverImageBase64,
                     'status': event?.status ?? 'upcoming',
                   };
@@ -771,7 +883,10 @@ class _WebAdminDashboardScreenState extends ConsumerState<WebAdminDashboardScree
                           ),
                         );
                         if (confirm == true) {
-                          await EventService.deleteEvent(event.id, event.eventName);
+                          await EventService.deleteEvent(
+                            event.id,
+                            event.eventName,
+                          );
                           if (!ctx.mounted) return;
                           Navigator.pop(ctx);
                         }
@@ -803,9 +918,7 @@ class _WebAdminDashboardScreenState extends ConsumerState<WebAdminDashboardScree
                 const SizedBox(height: 12),
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: TraceColors.error.withValues(
-                      alpha: 0.1,
-                    ),
+                    backgroundColor: TraceColors.error.withValues(alpha: 0.1),
                     foregroundColor: TraceColors.error,
                     side: BorderSide(
                       color: TraceColors.error.withValues(alpha: 0.5),
@@ -818,9 +931,7 @@ class _WebAdminDashboardScreenState extends ConsumerState<WebAdminDashboardScree
                   icon: const Icon(Icons.stop_circle_rounded),
                   label: Text(
                     'End Event',
-                    style: GoogleFonts.inter(
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: GoogleFonts.inter(fontWeight: FontWeight.w700),
                   ),
                   onPressed: () async {
                     final confirm = await showDialog<bool>(
@@ -862,8 +973,6 @@ class _WebAdminDashboardScreenState extends ConsumerState<WebAdminDashboardScree
       ),
     );
   }
-
-
 
   void _showAnnouncementDialog({QueryDocumentSnapshot? doc}) {
     final data = doc?.data() as Map<String, dynamic>?;
@@ -1075,7 +1184,8 @@ class _WebAdminDashboardScreenState extends ConsumerState<WebAdminDashboardScree
               var filteredDocs = docs.where((d) {
                 final data = d.data() as Map<String, dynamic>;
 
-                if (_fundSortOption == 'Expenses' && data['type'] != 'expense') {
+                if (_fundSortOption == 'Expenses' &&
+                    data['type'] != 'expense') {
                   return false;
                 }
                 if (_fundSortOption == 'Contribution' &&
@@ -1269,8 +1379,10 @@ class _WebAdminDashboardScreenState extends ConsumerState<WebAdminDashboardScree
                     label: 'Add Entry',
                     icon: Icons.add_rounded,
                     onPressed: () {
-                      if (!_canManageFunds) {
-                        _showAccessDenied('Only the Super Admin or Auditor can add funds.');
+                      if (!_canManageFunds(ref)) {
+                        _showAccessDenied(
+                          'Only the Super Admin or Auditor can add funds.',
+                        );
                       } else {
                         _showFundDialog();
                       }
@@ -1513,18 +1625,35 @@ class _WebAdminDashboardScreenState extends ConsumerState<WebAdminDashboardScree
                                   .get();
                               var docs = snap.docs.where((d) {
                                 final data = d.data();
-                                if (typeFilter == 'Expenses' && data['type'] != 'expense') return false;
-                                if (typeFilter == 'Contributions' && data['type'] != 'income' && data['type'] != 'contribution') return false;
+                                if (typeFilter == 'Expenses' &&
+                                    data['type'] != 'expense')
+                                  return false;
+                                if (typeFilter == 'Contributions' &&
+                                    data['type'] != 'income' &&
+                                    data['type'] != 'contribution')
+                                  return false;
                                 if (data['date'] != null) {
-                                  final dt = (data['date'] as Timestamp).toDate();
-                                  if (fromDate != null && dt.isBefore(fromDate!)) return false;
-                                  if (toDate != null && dt.isAfter(toDate!.add(const Duration(days: 1)))) return false;
+                                  final dt = (data['date'] as Timestamp)
+                                      .toDate();
+                                  if (fromDate != null &&
+                                      dt.isBefore(fromDate!))
+                                    return false;
+                                  if (toDate != null &&
+                                      dt.isAfter(
+                                        toDate!.add(const Duration(days: 1)),
+                                      ))
+                                    return false;
                                 }
-                                if (selectedEvent != null && data['eventId'] != selectedEvent) return false;
+                                if (selectedEvent != null &&
+                                    data['eventId'] != selectedEvent)
+                                  return false;
                                 return true;
                               }).toList();
 
-                              final pdfBytes = await PdfReportService.generateFundsReport(docs);
+                              final pdfBytes =
+                                  await PdfReportService.generateFundsReport(
+                                    docs,
+                                  );
                               await Printing.layoutPdf(
                                 onLayout: (_) => pdfBytes,
                                 name: 'Funds_Ledger_Report.pdf',
@@ -1545,14 +1674,28 @@ class _WebAdminDashboardScreenState extends ConsumerState<WebAdminDashboardScree
                                   .get();
                               var docs = snap.docs.where((d) {
                                 final data = d.data();
-                                if (typeFilter == 'Expenses' && data['type'] != 'expense') return false;
-                                if (typeFilter == 'Contributions' && data['type'] != 'income' && data['type'] != 'contribution') return false;
+                                if (typeFilter == 'Expenses' &&
+                                    data['type'] != 'expense')
+                                  return false;
+                                if (typeFilter == 'Contributions' &&
+                                    data['type'] != 'income' &&
+                                    data['type'] != 'contribution')
+                                  return false;
                                 if (data['date'] != null) {
-                                  final dt = (data['date'] as Timestamp).toDate();
-                                  if (fromDate != null && dt.isBefore(fromDate!)) return false;
-                                  if (toDate != null && dt.isAfter(toDate!.add(const Duration(days: 1)))) return false;
+                                  final dt = (data['date'] as Timestamp)
+                                      .toDate();
+                                  if (fromDate != null &&
+                                      dt.isBefore(fromDate!))
+                                    return false;
+                                  if (toDate != null &&
+                                      dt.isAfter(
+                                        toDate!.add(const Duration(days: 1)),
+                                      ))
+                                    return false;
                                 }
-                                if (selectedEvent != null && data['eventId'] != selectedEvent) return false;
+                                if (selectedEvent != null &&
+                                    data['eventId'] != selectedEvent)
+                                  return false;
                                 return true;
                               }).toList();
 
@@ -1770,158 +1913,166 @@ class _WebAdminDashboardScreenState extends ConsumerState<WebAdminDashboardScree
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   DropdownButtonFormField<String>(
-                  initialValue: type,
-                  decoration: const InputDecoration(labelText: 'Type'),
-                  items: const [
-                    DropdownMenuItem(value: 'income', child: Text('Income')),
-                    DropdownMenuItem(value: 'expense', child: Text('Expense')),
-                    DropdownMenuItem(
-                      value: 'contribution',
-                      child: Text('Contribution'),
-                    ),
-                  ],
-                  onChanged: (v) => setDState(() => type = v ?? type),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: descCtrl,
-                  maxLines: 3,
-                  keyboardType: TextInputType.multiline,
-                  decoration: const InputDecoration(labelText: 'Description'),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: amtCtrl,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Amount (₱)'),
-                ),
-                const SizedBox(height: 12),
-                StreamBuilder<QuerySnapshot>(
-                  stream: FirestoreService.db
-                      .collection('events')
-                      .orderBy('date', descending: true)
-                      .snapshots(),
-                  builder: (ctx, snap) {
-                    if (!snap.hasData) return const SizedBox();
-                    final events = snap.data!.docs;
-                    return DropdownButtonFormField<String?>(
-                      isExpanded: true,
-                      initialValue: selectedEventId,
-                      decoration: const InputDecoration(
-                        labelText: 'Link to Event (Optional)',
+                    initialValue: type,
+                    decoration: const InputDecoration(labelText: 'Type'),
+                    items: const [
+                      DropdownMenuItem(value: 'income', child: Text('Income')),
+                      DropdownMenuItem(
+                        value: 'expense',
+                        child: Text('Expense'),
                       ),
-                      items: [
-                        const DropdownMenuItem(
-                          value: null,
-                          child: Text('None'),
+                      DropdownMenuItem(
+                        value: 'contribution',
+                        child: Text('Contribution'),
+                      ),
+                    ],
+                    onChanged: (v) => setDState(() => type = v ?? type),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: descCtrl,
+                    maxLines: 3,
+                    keyboardType: TextInputType.multiline,
+                    decoration: const InputDecoration(labelText: 'Description'),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: amtCtrl,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(labelText: 'Amount (₱)'),
+                  ),
+                  const SizedBox(height: 12),
+                  StreamBuilder<QuerySnapshot>(
+                    stream: FirestoreService.db
+                        .collection('events')
+                        .orderBy('date', descending: true)
+                        .snapshots(),
+                    builder: (ctx, snap) {
+                      if (!snap.hasData) return const SizedBox();
+                      final events = snap.data!.docs;
+                      return DropdownButtonFormField<String?>(
+                        isExpanded: true,
+                        initialValue: selectedEventId,
+                        decoration: const InputDecoration(
+                          labelText: 'Link to Event (Optional)',
                         ),
-                        ...events.map((e) {
-                          final data = e.data() as Map<String, dynamic>;
-                          return DropdownMenuItem(
-                            value: e.id,
-                            child: Text(data['event_name'] ?? 'Unknown Event'),
-                          );
-                        }),
-                      ],
-                      onChanged: (v) => setDState(() => selectedEventId = v),
-                    );
-                  },
-                ),
-                const SizedBox(height: 16),
-                proofBytesList.isNotEmpty
-                    ? Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          ...List.generate(proofBytesList.length, (idx) {
-                            return SizedBox(
-                              width: 80,
-                              height: 80,
-                              child: Stack(
-                                children: [
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: Image.memory(
-                                      proofBytesList[idx],
-                                      fit: BoxFit.cover,
-                                      width: double.infinity,
-                                      height: double.infinity,
-                                    ),
-                                  ),
-                                  Positioned(
-                                    right: 4,
-                                    top: 4,
-                                    child: GestureDetector(
-                                      onTap: () => setDState(
-                                        () => proofBytesList.removeAt(idx),
-                                      ),
-                                      child: Container(
-                                        padding: const EdgeInsets.all(4),
-                                        decoration: const BoxDecoration(
-                                          color: Colors.red,
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: const Icon(
-                                          Icons.close,
-                                          color: Colors.white,
-                                          size: 12,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                        items: [
+                          const DropdownMenuItem(
+                            value: null,
+                            child: Text('None'),
+                          ),
+                          ...events.map((e) {
+                            final data = e.data() as Map<String, dynamic>;
+                            return DropdownMenuItem(
+                              value: e.id,
+                              child: Text(
+                                data['event_name'] ?? 'Unknown Event',
                               ),
                             );
                           }),
-                          GestureDetector(
-                            onTap: () => pickImages(setDState),
-                            child: Container(
-                              width: 80,
-                              height: 80,
-                              decoration: BoxDecoration(
-                                color: Colors.grey.withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Icon(Icons.add, color: Colors.grey),
-                            ),
-                          ),
                         ],
-                      )
-                    : GestureDetector(
-                        onTap: () => pickImages(setDState),
-                        child: Container(
-                          width: double.infinity,
-                          height: 120,
-                          decoration: BoxDecoration(
-                            color: Colors.grey.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: Colors.grey.withValues(alpha: 0.3),
-                            ),
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(
-                                Icons.add_a_photo_rounded,
-                                color: Colors.grey,
-                                size: 32,
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Upload Proof (Optional)',
-                                style: GoogleFonts.inter(
+                        onChanged: (v) => setDState(() => selectedEventId = v),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  proofBytesList.isNotEmpty
+                      ? Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            ...List.generate(proofBytesList.length, (idx) {
+                              return SizedBox(
+                                width: 80,
+                                height: 80,
+                                child: Stack(
+                                  children: [
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Image.memory(
+                                        proofBytesList[idx],
+                                        fit: BoxFit.cover,
+                                        width: double.infinity,
+                                        height: double.infinity,
+                                      ),
+                                    ),
+                                    Positioned(
+                                      right: 4,
+                                      top: 4,
+                                      child: GestureDetector(
+                                        onTap: () => setDState(
+                                          () => proofBytesList.removeAt(idx),
+                                        ),
+                                        child: Container(
+                                          padding: const EdgeInsets.all(4),
+                                          decoration: const BoxDecoration(
+                                            color: Colors.red,
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: const Icon(
+                                            Icons.close,
+                                            color: Colors.white,
+                                            size: 12,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }),
+                            GestureDetector(
+                              onTap: () => pickImages(setDState),
+                              child: Container(
+                                width: 80,
+                                height: 80,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(
+                                  Icons.add,
                                   color: Colors.grey,
-                                  fontSize: 13,
                                 ),
                               ),
-                            ],
+                            ),
+                          ],
+                        )
+                      : GestureDetector(
+                          onTap: () => pickImages(setDState),
+                          child: Container(
+                            width: double.infinity,
+                            height: 120,
+                            decoration: BoxDecoration(
+                              color: Colors.grey.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: Colors.grey.withValues(alpha: 0.3),
+                              ),
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(
+                                  Icons.add_a_photo_rounded,
+                                  color: Colors.grey,
+                                  size: 32,
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Upload Proof (Optional)',
+                                  style: GoogleFonts.inter(
+                                    color: Colors.grey,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-              ],
+                ],
+              ),
             ),
-          ),
           ),
           actions: [
             TextButton(
@@ -1936,25 +2087,28 @@ class _WebAdminDashboardScreenState extends ConsumerState<WebAdminDashboardScree
                 List<String> imageUrls = [];
                 for (int i = 0; i < proofBytesList.length; i++) {
                   final bytes = proofBytesList[i];
-                  final ref = FirebaseStorage.instance
-                      .ref()
-                      .child('receipts/${DateTime.now().millisecondsSinceEpoch}_$i.jpg');
+                  final ref = FirebaseStorage.instance.ref().child(
+                    'receipts/${DateTime.now().millisecondsSinceEpoch}_$i.jpg',
+                  );
                   await ref.putData(bytes);
                   final url = await ref.getDownloadURL();
                   imageUrls.add(url);
                 }
 
-                final docRef = await FirestoreService.db.collection('funds').add({
-                  'type': type,
-                  'description': descCtrl.text.trim(),
-                  'amount': double.tryParse(amtCtrl.text) ?? 0,
-                  'date': FieldValue.serverTimestamp(),
-                  'proof_images_urls': imageUrls,
-                  'eventId': selectedEventId,
-                });
+                final docRef = await FirestoreService.db
+                    .collection('funds')
+                    .add({
+                      'type': type,
+                      'description': descCtrl.text.trim(),
+                      'amount': double.tryParse(amtCtrl.text) ?? 0,
+                      'date': FieldValue.serverTimestamp(),
+                      'proof_images_urls': imageUrls,
+                      'eventId': selectedEventId,
+                    });
                 await ActivityLogService.log(
                   action: 'fund_${type}_added',
-                  message: 'Added $type: ₱${amtCtrl.text} for ${descCtrl.text.trim()}',
+                  message:
+                      'Added $type: ₱${amtCtrl.text} for ${descCtrl.text.trim()}',
                   entityType: 'fund',
                   entityId: docRef.id,
                   actorName: 'Admin',
@@ -2042,7 +2196,9 @@ class _WebAdminDashboardScreenState extends ConsumerState<WebAdminDashboardScree
                       proofImages = [data['proof_image_base64']];
                     }
                     if (data['proof_images_urls'] != null) {
-                      proofImages.addAll(List<String>.from(data['proof_images_urls']));
+                      proofImages.addAll(
+                        List<String>.from(data['proof_images_urls']),
+                      );
                     }
 
                     if (proofImages.isEmpty) return const SizedBox();
@@ -2103,8 +2259,10 @@ class _WebAdminDashboardScreenState extends ConsumerState<WebAdminDashboardScree
                           ),
                         ),
                         onPressed: () async {
-                          if (!_canManageFunds) {
-                            _showAccessDenied('Only the Super Admin or Auditor can delete funds.');
+                          if (!_canManageFunds(ref)) {
+                            _showAccessDenied(
+                              'Only the Super Admin or Auditor can delete funds.',
+                            );
                             return;
                           }
                           final confirm = await showDialog<bool>(
@@ -2152,12 +2310,12 @@ class _WebAdminDashboardScreenState extends ConsumerState<WebAdminDashboardScree
                       ),
                     ),
                     const SizedBox(width: 16),
-                  Expanded(
-                    child: GoldButton(
-                      label: 'Close',
-                      onPressed: () => Navigator.pop(ctx),
+                    Expanded(
+                      child: GoldButton(
+                        label: 'Close',
+                        onPressed: () => Navigator.pop(ctx),
+                      ),
                     ),
-                  ),
                   ],
                 ),
               ],
@@ -2182,9 +2340,7 @@ class _WebAdminDashboardScreenState extends ConsumerState<WebAdminDashboardScree
                 borderRadius: BorderRadius.circular(16),
                 child: base64String.startsWith('http')
                     ? Image.network(base64String)
-                    : Image.memory(
-                        base64Decode(base64String.split(',').last),
-                      ),
+                    : Image.memory(base64Decode(base64String.split(',').last)),
               ),
             ),
             Positioned(
@@ -2398,15 +2554,20 @@ class _AdminClaimCardState extends State<_AdminClaimCard> {
     if (ts == null) return '--';
     try {
       final dt = (ts as Timestamp).toDate();
-      return '${dt.month}/${dt.day}/${dt.year} ${dt.hour}:${dt.minute.toString().padLeft(2,'0')}';
-    } catch (_) { return '--'; }
+      return '${dt.month}/${dt.day}/${dt.year} ${dt.hour}:${dt.minute.toString().padLeft(2, '0')}';
+    } catch (_) {
+      return '--';
+    }
   }
 
   Color _statusColor(String status) {
     switch (status) {
-      case 'approved': return TraceColors.success;
-      case 'rejected': return TraceColors.error;
-      default: return TraceColors.warning;
+      case 'approved':
+        return TraceColors.success;
+      case 'rejected':
+        return TraceColors.error;
+      default:
+        return TraceColors.warning;
     }
   }
 
@@ -2418,13 +2579,26 @@ class _AdminClaimCardState extends State<_AdminClaimCard> {
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: Colors.white,
-        title: Text('Approve Claim?', style: GoogleFonts.inter(fontWeight: FontWeight.w800, color: TraceColors.navyBlue)),
-        content: Text('Update Student ID "$claimedId":\n• Name → "$name"\n• Email → "$email"',
-            style: GoogleFonts.inter(fontSize: 14)),
+        title: Text(
+          'Approve Claim?',
+          style: GoogleFonts.inter(
+            fontWeight: FontWeight.w800,
+            color: TraceColors.navyBlue,
+          ),
+        ),
+        content: Text(
+          'Update Student ID "$claimedId":\n• Name → "$name"\n• Email → "$email"',
+          style: GoogleFonts.inter(fontSize: 14),
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: TraceColors.success),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: TraceColors.success,
+            ),
             onPressed: () => Navigator.pop(context, true),
             child: const Text('Approve', style: TextStyle(color: Colors.white)),
           ),
@@ -2434,18 +2608,33 @@ class _AdminClaimCardState extends State<_AdminClaimCard> {
     if (confirm != true) return;
     setState(() => _isProcessing = true);
     try {
-      final snap = await FirestoreService.students.where('student_id', isEqualTo: claimedId).limit(1).get();
+      final snap = await FirestoreService.students
+          .where('student_id', isEqualTo: claimedId)
+          .limit(1)
+          .get();
       if (snap.docs.isEmpty) throw 'Student ID not found.';
       await StudentService.approveIdClaim(
-          claimDocId: widget.docId, studentDocId: snap.docs.first.id, newName: name, newEmail: email);
+        claimDocId: widget.docId,
+        studentDocId: snap.docs.first.id,
+        newName: name,
+        newEmail: email,
+      );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Claim approved!'), backgroundColor: TraceColors.success));
+          const SnackBar(
+            content: Text('Claim approved!'),
+            backgroundColor: TraceColors.success,
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: TraceColors.error));
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: TraceColors.error,
+          ),
+        );
       }
     }
     if (mounted) setState(() => _isProcessing = false);
@@ -2456,13 +2645,24 @@ class _AdminClaimCardState extends State<_AdminClaimCard> {
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: Colors.white,
-        title: Text('Reject Claim?', style: GoogleFonts.inter(fontWeight: FontWeight.w800)),
-        content: Text('Mark this petition as rejected.', style: GoogleFonts.inter(fontSize: 14)),
+        title: Text(
+          'Reject Claim?',
+          style: GoogleFonts.inter(fontWeight: FontWeight.w800),
+        ),
+        content: Text(
+          'Mark this petition as rejected.',
+          style: GoogleFonts.inter(fontSize: 14),
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-          ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: TraceColors.error),
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('Reject', style: TextStyle(color: Colors.white))),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: TraceColors.error),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Reject', style: TextStyle(color: Colors.white)),
+          ),
         ],
       ),
     );
@@ -2482,88 +2682,217 @@ class _AdminClaimCardState extends State<_AdminClaimCard> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _statusColor(status).withValues(alpha: 0.3), width: 1.5),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8, offset: const Offset(0, 3))],
+        border: Border.all(
+          color: _statusColor(status).withValues(alpha: 0.3),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          decoration: BoxDecoration(color: _statusColor(status).withValues(alpha: 0.08),
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(14))),
-          child: Row(children: [
-            Text('ID: ', style: GoogleFonts.inter(fontSize: 13, color: TraceColors.medGrey)),
-            Text(widget.data['claimed_student_id'] ?? '--',
-                style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w800, color: TraceColors.navyBlue)),
-            const Spacer(),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(color: _statusColor(status).withValues(alpha: 0.15), borderRadius: BorderRadius.circular(20)),
-              child: Text(status.toUpperCase(), style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w700, color: _statusColor(status))),
-            ),
-          ]),
-        ),
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            _row(Icons.person_outline, 'Name', widget.data['claimant_name'] ?? '--'),
-            const SizedBox(height: 6),
-            _row(Icons.email_outlined, 'Email', widget.data['claimant_email'] ?? '--'),
-            const SizedBox(height: 6),
-            _row(Icons.access_time, 'Submitted', _formatDate(widget.data['submitted_at'])),
-            const SizedBox(height: 10),
-            Text('Reason:', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: TraceColors.medGrey)),
-            const SizedBox(height: 4),
-            Text(widget.data['reason'] ?? '--',
-                style: GoogleFonts.inter(fontSize: 13, color: TraceColors.navyBlue, height: 1.5)),
-            if (proofUrl.isNotEmpty) ...[
-              const SizedBox(height: 10),
-              Text('Proof:', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: TraceColors.medGrey)),
-              const SizedBox(height: 6),
-              GestureDetector(
-                onTap: () => showDialog(context: context, builder: (_) => Dialog(
-                    backgroundColor: Colors.black,
-                    child: proofUrl.startsWith('data:image')
-                        ? Image.memory(base64Decode(proofUrl.split(',').last))
-                        : Image.network(proofUrl))),
-                child: ClipRRect(borderRadius: BorderRadius.circular(8),
-                  child: SizedBox(height: 130, width: double.infinity,
-                    child: proofUrl.startsWith('data:image')
-                        ? Image.memory(base64Decode(proofUrl.split(',').last), fit: BoxFit.cover)
-                        : Image.network(proofUrl, fit: BoxFit.cover))),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(
+              color: _statusColor(status).withValues(alpha: 0.08),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(14),
               ),
-            ],
-            if (isPending) ...[
-              const SizedBox(height: 14),
-              _isProcessing
-                  ? const Center(child: CircularProgressIndicator(color: TraceColors.navyBlue))
-                  : Row(children: [
-                      Expanded(child: OutlinedButton(
-                        onPressed: _reject,
-                        style: OutlinedButton.styleFrom(foregroundColor: TraceColors.error,
-                            side: const BorderSide(color: TraceColors.error),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-                        child: const Text('Reject'),
-                      )),
-                      const SizedBox(width: 10),
-                      Expanded(child: ElevatedButton(
-                        onPressed: _approve,
-                        style: ElevatedButton.styleFrom(backgroundColor: TraceColors.success,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-                        child: const Text('Approve', style: TextStyle(color: Colors.white)),
-                      )),
-                    ]),
-            ],
-          ]),
-        ),
-      ]),
+            ),
+            child: Row(
+              children: [
+                Text(
+                  'ID: ',
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    color: TraceColors.medGrey,
+                  ),
+                ),
+                Text(
+                  widget.data['claimed_student_id'] ?? '--',
+                  style: GoogleFonts.inter(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: TraceColors.navyBlue,
+                  ),
+                ),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _statusColor(status).withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    status.toUpperCase(),
+                    style: GoogleFonts.inter(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: _statusColor(status),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _row(
+                  Icons.person_outline,
+                  'Name',
+                  widget.data['claimant_name'] ?? '--',
+                ),
+                const SizedBox(height: 6),
+                _row(
+                  Icons.email_outlined,
+                  'Email',
+                  widget.data['claimant_email'] ?? '--',
+                ),
+                const SizedBox(height: 6),
+                _row(
+                  Icons.access_time,
+                  'Submitted',
+                  _formatDate(widget.data['submitted_at']),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  'Reason:',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: TraceColors.medGrey,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  widget.data['reason'] ?? '--',
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    color: TraceColors.navyBlue,
+                    height: 1.5,
+                  ),
+                ),
+                if (proofUrl.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  Text(
+                    'Proof:',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: TraceColors.medGrey,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  GestureDetector(
+                    onTap: () => showDialog(
+                      context: context,
+                      builder: (_) => Dialog(
+                        backgroundColor: Colors.black,
+                        child: proofUrl.startsWith('data:image')
+                            ? Image.memory(
+                                base64Decode(proofUrl.split(',').last),
+                              )
+                            : Image.network(proofUrl),
+                      ),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: SizedBox(
+                        height: 130,
+                        width: double.infinity,
+                        child: proofUrl.startsWith('data:image')
+                            ? Image.memory(
+                                base64Decode(proofUrl.split(',').last),
+                                fit: BoxFit.cover,
+                              )
+                            : Image.network(proofUrl, fit: BoxFit.cover),
+                      ),
+                    ),
+                  ),
+                ],
+                if (isPending) ...[
+                  const SizedBox(height: 14),
+                  _isProcessing
+                      ? const Center(
+                          child: CircularProgressIndicator(
+                            color: TraceColors.navyBlue,
+                          ),
+                        )
+                      : Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed: _reject,
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: TraceColors.error,
+                                  side: const BorderSide(
+                                    color: TraceColors.error,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                                child: const Text('Reject'),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: _approve,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: TraceColors.success,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                                child: const Text(
+                                  'Approve',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _row(IconData icon, String label, String value) => Row(children: [
-    Icon(icon, size: 15, color: TraceColors.medGrey),
-    const SizedBox(width: 6),
-    Text('$label: ', style: GoogleFonts.inter(fontSize: 12, color: TraceColors.medGrey)),
-    Expanded(child: Text(value, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: TraceColors.navyBlue), overflow: TextOverflow.ellipsis)),
-  ]);
+  Widget _row(IconData icon, String label, String value) => Row(
+    children: [
+      Icon(icon, size: 15, color: TraceColors.medGrey),
+      const SizedBox(width: 6),
+      Text(
+        '$label: ',
+        style: GoogleFonts.inter(fontSize: 12, color: TraceColors.medGrey),
+      ),
+      Expanded(
+        child: Text(
+          value,
+          style: GoogleFonts.inter(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: TraceColors.navyBlue,
+          ),
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+    ],
+  );
 }
-

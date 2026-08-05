@@ -24,7 +24,11 @@ class EventDetailsFullScreen extends StatelessWidget {
         return Container(color: TraceColors.lightGrey);
       }
     }
-    return Image.network(url, fit: fit, errorBuilder: (_,_,_) => Container(color: TraceColors.lightGrey));
+    return Image.network(
+      url,
+      fit: fit,
+      errorBuilder: (_, _, _) => Container(color: TraceColors.lightGrey),
+    );
   }
 
   @override
@@ -48,55 +52,89 @@ class EventDetailsFullScreen extends StatelessWidget {
                   buildBanner: _buildBannerImage,
                 ),
               ),
-          SliverPadding(
-            padding: const EdgeInsets.all(24),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                if (event.description.isNotEmpty) ...[
-                  Text(
-                    'Event Details',
-                    style: GoogleFonts.inter(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: TraceColors.gold,
+              SliverPadding(
+                padding: const EdgeInsets.all(24),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate([
+                    if (event.description.isNotEmpty) ...[
+                      Text(
+                        'Event Details',
+                        style: GoogleFonts.inter(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: TraceColors.gold,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        event.description,
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          color: TraceColors.white.withValues(alpha: 0.8),
+                          height: 1.5,
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+                    ],
+                    Text(
+                      'Schedule of Attendance',
+                      style: GoogleFonts.inter(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: TraceColors.gold,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    event.description,
-                    style: GoogleFonts.inter(fontSize: 14, color: TraceColors.white.withValues(alpha: 0.8), height: 1.5),
-                  ),
-                  const SizedBox(height: 32),
-                ],
-                Text(
-                  'Schedule of Attendance',
-                  style: GoogleFonts.inter(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: TraceColors.gold,
-                  ),
+                    const SizedBox(height: 16),
+                    if (!isWholeDay) ...[
+                      _buildScheduleRow(
+                        context,
+                        isAfternoonHalfDay ? 'Afternoon In' : 'Morning In',
+                        (isAfternoonHalfDay
+                                ? event.afternoonTimeIn
+                                : event.morningTimeIn) ??
+                            '--',
+                      ),
+                      _buildScheduleRow(
+                        context,
+                        isAfternoonHalfDay ? 'Afternoon Out' : 'Morning Out',
+                        (isAfternoonHalfDay
+                                ? event.afternoonTimeOut
+                                : event.morningTimeOut) ??
+                            '--',
+                      ),
+                    ] else ...[
+                      _buildScheduleRow(
+                        context,
+                        'Morning In',
+                        event.morningTimeIn ?? '--',
+                      ),
+                      _buildScheduleRow(
+                        context,
+                        'Morning Out',
+                        event.morningTimeOut ?? '--',
+                      ),
+                      const SizedBox(height: 8),
+                      _buildScheduleRow(
+                        context,
+                        'Afternoon In',
+                        event.afternoonTimeIn ?? '--',
+                      ),
+                      _buildScheduleRow(
+                        context,
+                        'Afternoon Out',
+                        event.afternoonTimeOut ?? '--',
+                      ),
+                    ],
+                    if (bottomActions != null) ...[
+                      const SizedBox(height: 32),
+                      bottomActions!,
+                    ],
+                    const SizedBox(height: 48),
+                  ]),
                 ),
-                const SizedBox(height: 16),
-                if (!isWholeDay) ...[
-                  _buildScheduleRow(context, isAfternoonHalfDay ? 'Afternoon In' : 'Morning In', (isAfternoonHalfDay ? event.afternoonTimeIn : event.morningTimeIn) ?? '--'),
-                  _buildScheduleRow(context, isAfternoonHalfDay ? 'Afternoon Out' : 'Morning Out', (isAfternoonHalfDay ? event.afternoonTimeOut : event.morningTimeOut) ?? '--'),
-                ] else ...[
-                  _buildScheduleRow(context, 'Morning In', event.morningTimeIn ?? '--'),
-                  _buildScheduleRow(context, 'Morning Out', event.morningTimeOut ?? '--'),
-                  const SizedBox(height: 8),
-                  _buildScheduleRow(context, 'Afternoon In', event.afternoonTimeIn ?? '--'),
-                  _buildScheduleRow(context, 'Afternoon Out', event.afternoonTimeOut ?? '--'),
-                ],
-                if (bottomActions != null) ...[
-                  const SizedBox(height: 32),
-                  bottomActions!,
-                ],
-                const SizedBox(height: 48),
-              ]),
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
         ),
       ),
     );
@@ -106,7 +144,10 @@ class EventDetailsFullScreen extends StatelessWidget {
     if (timeStr == null || timeStr.isEmpty) return '--';
     try {
       final parts = timeStr.split(':');
-      final time = TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1]));
+      final time = TimeOfDay(
+        hour: int.parse(parts[0]),
+        minute: int.parse(parts[1]),
+      );
       return time.format(context);
     } catch (_) {
       return timeStr;
@@ -119,8 +160,21 @@ class EventDetailsFullScreen extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: GoogleFonts.inter(color: TraceColors.white.withValues(alpha: 0.7), fontSize: 14)),
-          Text(_formatDisplayTime(context, timeStr), style: GoogleFonts.inter(color: TraceColors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+          Text(
+            label,
+            style: GoogleFonts.inter(
+              color: TraceColors.white.withValues(alpha: 0.7),
+              fontSize: 14,
+            ),
+          ),
+          Text(
+            _formatDisplayTime(context, timeStr),
+            style: GoogleFonts.inter(
+              color: TraceColors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
+          ),
         ],
       ),
     );
@@ -155,12 +209,17 @@ class _EventDetailsHeaderDelegate extends SliverPersistentHeaderDelegate {
   double get maxExtent => safeAreaTop + 320;
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
-    final progress = shrinkOffset / (maxExtent - minExtent); // 0 (expanded) to 1 (shrunk)
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    final progress =
+        shrinkOffset / (maxExtent - minExtent); // 0 (expanded) to 1 (shrunk)
     final clampedProgress = progress.clamp(0.0, 1.0);
     final isShrunk = clampedProgress > 0.8;
     final dateStr = DateFormat('MMM dd, yyyy').format(event.date);
-    
+
     return Container(
       color: TraceColors.navyBlue,
       child: Stack(
@@ -171,7 +230,15 @@ class _EventDetailsHeaderDelegate extends SliverPersistentHeaderDelegate {
               bottom: 80,
               child: GestureDetector(
                 onTap: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => _FullScreenImage(url: event.bannerUrl, buildBanner: buildBanner)));
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => _FullScreenImage(
+                        url: event.bannerUrl,
+                        buildBanner: buildBanner,
+                      ),
+                    ),
+                  );
                 },
                 child: Opacity(
                   opacity: 1 - clampedProgress,
@@ -180,25 +247,25 @@ class _EventDetailsHeaderDelegate extends SliverPersistentHeaderDelegate {
               ),
             ),
           if (event.bannerUrl.isNotEmpty && clampedProgress < 1.0)
-             Positioned(
-               bottom: 80,
-               left: 0,
-               right: 0,
-               height: 80,
-               child: Container(
-                 decoration: BoxDecoration(
-                   gradient: LinearGradient(
-                     begin: Alignment.topCenter,
-                     end: Alignment.bottomCenter,
-                     colors: [
-                       TraceColors.navyBlue.withValues(alpha: 0.0),
-                       TraceColors.navyBlue,
-                     ],
-                   ),
-                 ),
-               ),
-             ),
-          
+            Positioned(
+              bottom: 80,
+              left: 0,
+              right: 0,
+              height: 80,
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      TraceColors.navyBlue.withValues(alpha: 0.0),
+                      TraceColors.navyBlue,
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
           Positioned(
             top: safeAreaTop + 8,
             right: 8,
@@ -223,14 +290,17 @@ class _EventDetailsHeaderDelegate extends SliverPersistentHeaderDelegate {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 if (event.bannerUrl.isNotEmpty && isShrunk) ...[
-                   CircleAvatar(
-                     radius: 20,
-                     backgroundColor: TraceColors.lightGrey,
-                     backgroundImage: event.bannerUrl.startsWith('data:image') 
-                         ? MemoryImage(base64Decode(event.bannerUrl.split(',').last)) as ImageProvider
-                         : NetworkImage(event.bannerUrl),
-                   ),
-                   const SizedBox(width: 12),
+                  CircleAvatar(
+                    radius: 20,
+                    backgroundColor: TraceColors.lightGrey,
+                    backgroundImage: event.bannerUrl.startsWith('data:image')
+                        ? MemoryImage(
+                                base64Decode(event.bannerUrl.split(',').last),
+                              )
+                              as ImageProvider
+                        : NetworkImage(event.bannerUrl),
+                  ),
+                  const SizedBox(width: 12),
                 ],
                 Expanded(
                   child: Column(
@@ -241,7 +311,9 @@ class _EventDetailsHeaderDelegate extends SliverPersistentHeaderDelegate {
                         fit: BoxFit.scaleDown,
                         alignment: Alignment.centerLeft,
                         child: Text(
-                          event.eventName.isEmpty ? 'Event Details' : event.eventName,
+                          event.eventName.isEmpty
+                              ? 'Event Details'
+                              : event.eventName,
                           style: GoogleFonts.inter(
                             fontWeight: FontWeight.w800,
                             fontSize: isShrunk ? 18 : 24,
@@ -288,7 +360,8 @@ class _EventDetailsHeaderDelegate extends SliverPersistentHeaderDelegate {
   }
 
   @override
-  bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) => true;
+  bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) =>
+      true;
 }
 
 class _FullScreenImage extends StatelessWidget {
@@ -304,13 +377,14 @@ class _FullScreenImage extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(icon: const Icon(Icons.close, color: Colors.white), onPressed: () => Navigator.pop(context)),
+        leading: IconButton(
+          icon: const Icon(Icons.close, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       extendBodyBehindAppBar: true,
       body: Center(
-        child: InteractiveViewer(
-          child: buildBanner(url, fit: BoxFit.contain),
-        ),
+        child: InteractiveViewer(child: buildBanner(url, fit: BoxFit.contain)),
       ),
     );
   }

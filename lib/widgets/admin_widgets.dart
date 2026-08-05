@@ -33,12 +33,23 @@ class AdminStatCard extends StatelessWidget {
             children: [
               FittedBox(
                 fit: BoxFit.scaleDown,
-                child: Text(value, style: GoogleFonts.inter(
-                  fontSize: 22, fontWeight: FontWeight.w800, color: TraceColors.navyBlue,
-                )),
+                child: Text(
+                  value,
+                  style: GoogleFonts.inter(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: TraceColors.navyBlue,
+                  ),
+                ),
               ),
               const SizedBox(height: 2),
-              Text(label, style: GoogleFonts.inter(fontSize: 12, color: TraceColors.medGrey)),
+              Text(
+                label,
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  color: TraceColors.medGrey,
+                ),
+              ),
             ],
           ),
         ],
@@ -73,7 +84,7 @@ class AdminQuickAction extends StatelessWidget {
               color: TraceColors.navyBlue.withValues(alpha: 0.3),
               blurRadius: 8,
               offset: const Offset(0, 4),
-            )
+            ),
           ],
         ),
         child: Row(

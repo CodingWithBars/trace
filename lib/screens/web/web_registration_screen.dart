@@ -15,7 +15,8 @@ class WebRegistrationScreen extends ConsumerStatefulWidget {
   const WebRegistrationScreen({super.key});
 
   @override
-  ConsumerState<WebRegistrationScreen> createState() => _WebRegistrationScreenState();
+  ConsumerState<WebRegistrationScreen> createState() =>
+      _WebRegistrationScreenState();
 }
 
 class _WebRegistrationScreenState extends ConsumerState<WebRegistrationScreen> {
@@ -28,9 +29,7 @@ class _WebRegistrationScreenState extends ConsumerState<WebRegistrationScreen> {
   Uint8List? _avatarBytes;
   final ImagePicker _picker = ImagePicker();
 
-  final List<String> _programs = [
-    'BSIT',
-  ];
+  final List<String> _programs = ['BSIT'];
   String? _selectedProgram = 'BSIT';
 
   final List<String> _yearLevels = [
@@ -211,12 +210,9 @@ class _WebRegistrationScreenState extends ConsumerState<WebRegistrationScreen> {
         } else if (errorMsg.contains('FirebaseException')) {
           errorMsg = 'A network or server error occurred. Please try again.';
         }
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMsg),
-            backgroundColor: TraceColors.error,
-          ),
+          SnackBar(content: Text(errorMsg), backgroundColor: TraceColors.error),
         );
       }
     } finally {
@@ -291,8 +287,8 @@ class _WebRegistrationScreenState extends ConsumerState<WebRegistrationScreen> {
                   }
                 },
               ),
-              // Removing actions since we only need the back button
 
+              // Removing actions since we only need the back button
             ),
             body: _buildForm(isWide),
           ),

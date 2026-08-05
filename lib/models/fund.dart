@@ -22,7 +22,9 @@ class Fund {
       amount: (data['amount'] ?? 0).toDouble(),
       description: data['description'] ?? '',
       eventId: data['event_id'],
-      date: data['date'] != null ? (data['date'] as dynamic).toDate() : DateTime.now(),
+      date: data['date'] != null
+          ? (data['date'] as dynamic).toDate()
+          : DateTime.now(),
     );
   }
 

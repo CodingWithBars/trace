@@ -66,7 +66,10 @@ class _ManageAdminsScreenState extends ConsumerState<ManageAdminsScreen> {
                 const SizedBox(height: 8),
                 Text(
                   'Create an account for another administrator. They will use this email and password to log in.',
-                  style: GoogleFonts.inter(fontSize: 13, color: TraceColors.medGrey),
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    color: TraceColors.medGrey,
+                  ),
                 ),
                 const SizedBox(height: 24),
                 TextField(
@@ -86,7 +89,11 @@ class _ManageAdminsScreenState extends ConsumerState<ManageAdminsScreen> {
                   decoration: InputDecoration(
                     labelText: 'Password (min 6 chars)',
                     suffixIcon: IconButton(
-                      icon: Icon(obscurePassword ? Icons.visibility_off : Icons.visibility),
+                      icon: Icon(
+                        obscurePassword
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                      ),
                       onPressed: () {
                         setModalState(() {
                           obscurePassword = !obscurePassword;
@@ -104,42 +111,62 @@ class _ManageAdminsScreenState extends ConsumerState<ManageAdminsScreen> {
                     label: 'Create Admin Account',
                     fullWidth: true,
                     onPressed: () async {
-                      if (nameCtrl.text.trim().isEmpty || emailCtrl.text.trim().isEmpty || passwordCtrl.text.isEmpty) {
+                      if (nameCtrl.text.trim().isEmpty ||
+                          emailCtrl.text.trim().isEmpty ||
+                          passwordCtrl.text.isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Please fill all fields')),
+                          const SnackBar(
+                            content: Text('Please fill all fields'),
+                          ),
                         );
                         return;
                       }
                       if (passwordCtrl.text.length < 6) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Password must be at least 6 characters')),
+                          const SnackBar(
+                            content: Text(
+                              'Password must be at least 6 characters',
+                            ),
+                          ),
                         );
                         return;
                       }
                       setModalState(() => isProcessing = true);
-                      
+
                       final authService = ref.read(authServiceProvider);
                       final error = await authService.createAdmin(
                         nameCtrl.text.trim(),
                         emailCtrl.text.trim(),
                         passwordCtrl.text,
                       );
-                      
+
                       if (!ctx.mounted) return;
                       setModalState(() => isProcessing = false);
-                      
+
                       if (error != null) {
                         ScaffoldMessenger.of(ctx).showSnackBar(
-                          SnackBar(content: Text(error), backgroundColor: TraceColors.error),
+                          SnackBar(
+                            content: Text(error),
+                            backgroundColor: TraceColors.error,
+                          ),
                         );
                       } else {
                         ActivityLogService.log(
                           action: 'Admin Account Created',
-                          message: 'Created new admin account for ${emailCtrl.text.trim()}',
-                          actorName: ref.read(authServiceProvider).currentUser?.email ?? 'Admin',
+                          message:
+                              'Created new admin account for ${emailCtrl.text.trim()}',
+                          actorName:
+                              ref
+                                  .read(authServiceProvider)
+                                  .currentUser
+                                  ?.email ??
+                              'Admin',
                         );
                         ScaffoldMessenger.of(ctx).showSnackBar(
-                          const SnackBar(content: Text('Admin created successfully!'), backgroundColor: TraceColors.success),
+                          const SnackBar(
+                            content: Text('Admin created successfully!'),
+                            backgroundColor: TraceColors.success,
+                          ),
                         );
                         Navigator.pop(ctx);
                       }
@@ -185,11 +212,21 @@ class _ManageAdminsScreenState extends ConsumerState<ManageAdminsScreen> {
                   child: Container(
                     width: 40,
                     height: 4,
-                    decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 24),
-                Text('Edit Admin Details', style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold, color: TraceColors.navyBlue)),
+                Text(
+                  'Edit Admin Details',
+                  style: GoogleFonts.inter(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: TraceColors.navyBlue,
+                  ),
+                ),
                 const SizedBox(height: 24),
                 TextField(
                   controller: nameCtrl,
@@ -209,7 +246,10 @@ class _ManageAdminsScreenState extends ConsumerState<ManageAdminsScreen> {
                   decoration: const InputDecoration(labelText: 'Role'),
                   items: const [
                     DropdownMenuItem(value: 'admin', child: Text('Admin')),
-                    DropdownMenuItem(value: 'superadmin', child: Text('Superadmin')),
+                    DropdownMenuItem(
+                      value: 'superadmin',
+                      child: Text('Superadmin'),
+                    ),
                   ],
                   onChanged: (v) {
                     if (v != null) {
@@ -233,7 +273,12 @@ class _ManageAdminsScreenState extends ConsumerState<ManageAdminsScreen> {
                       if (!ctx.mounted) return;
                       setModalState(() => isProcessing = false);
                       Navigator.pop(ctx);
-                      ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('Updated successfully'), backgroundColor: TraceColors.success));
+                      ScaffoldMessenger.of(ctx).showSnackBar(
+                        const SnackBar(
+                          content: Text('Updated successfully'),
+                          backgroundColor: TraceColors.success,
+                        ),
+                      );
                     },
                   ),
               ],
@@ -247,34 +292,53 @@ class _ManageAdminsScreenState extends ConsumerState<ManageAdminsScreen> {
   void _confirmDelete(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     if (data['email']?.toString().toLowerCase() == 'iitsoofficer@dorsu.bc') {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Cannot delete the master admin account.'), backgroundColor: TraceColors.error));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Cannot delete the master admin account.'),
+          backgroundColor: TraceColors.error,
+        ),
+      );
       return;
     }
-    
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete Admin?'),
-        content: const Text('Are you sure you want to delete this admin? They will lose access to the portal immediately.'),
+        content: const Text(
+          'Are you sure you want to delete this admin? They will lose access to the portal immediately.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
           TextButton(
             onPressed: () async {
               Navigator.pop(ctx);
               await doc.reference.delete();
-              
+
               final email = (doc.data() as Map<String, dynamic>)['email'];
               ActivityLogService.log(
                 action: 'Admin Deleted',
                 message: 'Revoked access for admin $email',
-                actorName: ref.read(authServiceProvider).currentUser?.email ?? 'Admin',
+                actorName:
+                    ref.read(authServiceProvider).currentUser?.email ?? 'Admin',
               );
 
               if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Admin deleted successfully'), backgroundColor: TraceColors.success));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Admin deleted successfully'),
+                    backgroundColor: TraceColors.success,
+                  ),
+                );
               }
             },
-            child: const Text('Delete', style: TextStyle(color: TraceColors.error)),
+            child: const Text(
+              'Delete',
+              style: TextStyle(color: TraceColors.error),
+            ),
           ),
         ],
       ),
@@ -325,10 +389,14 @@ class _ManageAdminsScreenState extends ConsumerState<ManageAdminsScreen> {
             const SizedBox(height: 16),
             Expanded(
               child: StreamBuilder<QuerySnapshot>(
-                stream: FirestoreService.admins.orderBy('created_at', descending: true).snapshots(),
+                stream: FirestoreService.admins
+                    .orderBy('created_at', descending: true)
+                    .snapshots(),
                 builder: (ctx, snap) {
-                  if (snap.hasError) return Center(child: Text('Error: ${snap.error}'));
-                  if (!snap.hasData) return const Center(child: CircularProgressIndicator());
+                  if (snap.hasError)
+                    return Center(child: Text('Error: ${snap.error}'));
+                  if (!snap.hasData)
+                    return const Center(child: CircularProgressIndicator());
 
                   final docs = snap.data!.docs;
                   if (docs.isEmpty) {
@@ -337,11 +405,13 @@ class _ManageAdminsScreenState extends ConsumerState<ManageAdminsScreen> {
 
                   return ListView.separated(
                     itemCount: docs.length,
-                    separatorBuilder: (context, index) => const SizedBox(height: 12),
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(height: 12),
                     itemBuilder: (ctx, i) {
                       final doc = docs[i];
                       final data = doc.data() as Map<String, dynamic>;
-                      final isMe = currentEmail != null && currentEmail == data['email'];
+                      final isMe =
+                          currentEmail != null && currentEmail == data['email'];
 
                       return TraceCard(
                         padding: const EdgeInsets.all(20),
@@ -350,10 +420,15 @@ class _ManageAdminsScreenState extends ConsumerState<ManageAdminsScreen> {
                             Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: TraceColors.navyBlue.withValues(alpha: 0.1),
+                                color: TraceColors.navyBlue.withValues(
+                                  alpha: 0.1,
+                                ),
                                 shape: BoxShape.circle,
                               ),
-                              child: const Icon(Icons.admin_panel_settings, color: TraceColors.navyBlue),
+                              child: const Icon(
+                                Icons.admin_panel_settings,
+                                color: TraceColors.navyBlue,
+                              ),
                             ),
                             const SizedBox(width: 16),
                             Expanded(
@@ -364,27 +439,61 @@ class _ManageAdminsScreenState extends ConsumerState<ManageAdminsScreen> {
                                     children: [
                                       Text(
                                         data['name'] ?? data['email'] ?? '--',
-                                        style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: TraceColors.navyBlue),
+                                        style: GoogleFonts.inter(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: TraceColors.navyBlue,
+                                        ),
                                       ),
                                       if (isMe) ...[
                                         const SizedBox(width: 8),
                                         Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                          decoration: BoxDecoration(color: TraceColors.gold, borderRadius: BorderRadius.circular(10)),
-                                          child: Text('YOU', style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold, color: TraceColors.navyBlue)),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 2,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: TraceColors.gold,
+                                            borderRadius: BorderRadius.circular(
+                                              10,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            'YOU',
+                                            style: GoogleFonts.inter(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold,
+                                              color: TraceColors.navyBlue,
+                                            ),
+                                          ),
                                         ),
                                       ],
                                     ],
                                   ),
                                   const SizedBox(height: 4),
-                                  Text('Role: ${(data['role'] ?? 'Admin').toString().toUpperCase()}', style: GoogleFonts.inter(fontSize: 12, color: TraceColors.medGrey)),
-                                  Text('Added: ${_formatDate(data['created_at'])}', style: GoogleFonts.inter(fontSize: 12, color: TraceColors.medGrey)),
+                                  Text(
+                                    'Role: ${(data['role'] ?? 'Admin').toString().toUpperCase()}',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 12,
+                                      color: TraceColors.medGrey,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Added: ${_formatDate(data['created_at'])}',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 12,
+                                      color: TraceColors.medGrey,
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),
                             if (!isMe)
                               PopupMenuButton<String>(
-                                icon: const Icon(Icons.more_horiz, color: TraceColors.navyBlue),
+                                icon: const Icon(
+                                  Icons.more_horiz,
+                                  color: TraceColors.navyBlue,
+                                ),
                                 onSelected: (val) {
                                   if (val == 'edit') {
                                     _showEditAdminDialog(doc);
@@ -397,7 +506,11 @@ class _ManageAdminsScreenState extends ConsumerState<ManageAdminsScreen> {
                                     value: 'edit',
                                     child: Row(
                                       children: [
-                                        Icon(Icons.edit_outlined, color: TraceColors.navyBlue, size: 20),
+                                        Icon(
+                                          Icons.edit_outlined,
+                                          color: TraceColors.navyBlue,
+                                          size: 20,
+                                        ),
                                         SizedBox(width: 12),
                                         Text('Edit Admin'),
                                       ],
@@ -407,9 +520,18 @@ class _ManageAdminsScreenState extends ConsumerState<ManageAdminsScreen> {
                                     value: 'delete',
                                     child: Row(
                                       children: [
-                                        Icon(Icons.delete_outline, color: TraceColors.error, size: 20),
+                                        Icon(
+                                          Icons.delete_outline,
+                                          color: TraceColors.error,
+                                          size: 20,
+                                        ),
                                         SizedBox(width: 12),
-                                        Text('Delete', style: TextStyle(color: TraceColors.error)),
+                                        Text(
+                                          'Delete',
+                                          style: TextStyle(
+                                            color: TraceColors.error,
+                                          ),
+                                        ),
                                       ],
                                     ),
                                   ),

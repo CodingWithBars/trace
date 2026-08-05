@@ -123,10 +123,22 @@ class _EventAttendanceScreenState extends State<EventAttendanceScreen> {
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: TraceColors.gold,
         onPressed: () {
-          CsvReportService.generateAttendanceCsv(filteredAttendance, _studentsMap);
+          CsvReportService.generateAttendanceCsv(
+            filteredAttendance,
+            _studentsMap,
+          );
         },
-        icon: const Icon(Icons.table_chart_rounded, color: TraceColors.navyBlue),
-        label: Text('Export CSV', style: GoogleFonts.inter(color: TraceColors.navyBlue, fontWeight: FontWeight.bold)),
+        icon: const Icon(
+          Icons.table_chart_rounded,
+          color: TraceColors.navyBlue,
+        ),
+        label: Text(
+          'Export CSV',
+          style: GoogleFonts.inter(
+            color: TraceColors.navyBlue,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
       body: CustomScrollView(
         slivers: [

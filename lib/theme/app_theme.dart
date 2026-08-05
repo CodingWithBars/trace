@@ -81,31 +81,49 @@ class AppTheme {
     return base.copyWith(
       textTheme: GoogleFonts.interTextTheme(base.textTheme).copyWith(
         displayLarge: GoogleFonts.inter(
-          fontSize: 48, fontWeight: FontWeight.w800, color: TraceColors.white,
+          fontSize: 48,
+          fontWeight: FontWeight.w800,
+          color: TraceColors.white,
         ),
         displayMedium: GoogleFonts.inter(
-          fontSize: 36, fontWeight: FontWeight.w700, color: TraceColors.white,
+          fontSize: 36,
+          fontWeight: FontWeight.w700,
+          color: TraceColors.white,
         ),
         displaySmall: GoogleFonts.inter(
-          fontSize: 28, fontWeight: FontWeight.w700, color: TraceColors.navyBlue,
+          fontSize: 28,
+          fontWeight: FontWeight.w700,
+          color: TraceColors.navyBlue,
         ),
         headlineLarge: GoogleFonts.inter(
-          fontSize: 24, fontWeight: FontWeight.w700, color: TraceColors.navyBlue,
+          fontSize: 24,
+          fontWeight: FontWeight.w700,
+          color: TraceColors.navyBlue,
         ),
         headlineMedium: GoogleFonts.inter(
-          fontSize: 20, fontWeight: FontWeight.w600, color: TraceColors.navyBlue,
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
+          color: TraceColors.navyBlue,
         ),
         titleLarge: GoogleFonts.inter(
-          fontSize: 18, fontWeight: FontWeight.w600, color: TraceColors.navyBlue,
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+          color: TraceColors.navyBlue,
         ),
         bodyLarge: GoogleFonts.inter(
-          fontSize: 16, fontWeight: FontWeight.w400, color: TraceColors.black,
+          fontSize: 16,
+          fontWeight: FontWeight.w400,
+          color: TraceColors.black,
         ),
         bodyMedium: GoogleFonts.inter(
-          fontSize: 14, fontWeight: FontWeight.w400, color: TraceColors.medGrey,
+          fontSize: 14,
+          fontWeight: FontWeight.w400,
+          color: TraceColors.medGrey,
         ),
         labelLarge: GoogleFonts.inter(
-          fontSize: 14, fontWeight: FontWeight.w600, letterSpacing: 0.5,
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.5,
         ),
       ),
       appBarTheme: AppBarTheme(
@@ -113,7 +131,9 @@ class AppTheme {
         foregroundColor: TraceColors.white,
         elevation: 0,
         titleTextStyle: GoogleFonts.inter(
-          fontSize: 20, fontWeight: FontWeight.w700, color: TraceColors.white,
+          fontSize: 20,
+          fontWeight: FontWeight.w700,
+          color: TraceColors.white,
           letterSpacing: 1.2,
         ),
         iconTheme: const IconThemeData(color: TraceColors.gold),
@@ -124,24 +144,37 @@ class AppTheme {
           foregroundColor: TraceColors.navyBlue,
           elevation: 2,
           shadowColor: TraceColors.gold.withValues(alpha: 0.4),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-          textStyle: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 15),
+          textStyle: GoogleFonts.inter(
+            fontWeight: FontWeight.w700,
+            fontSize: 15,
+          ),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: TraceColors.royalBlue,
           side: const BorderSide(color: TraceColors.royalBlue, width: 1.5),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-          textStyle: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 15),
+          textStyle: GoogleFonts.inter(
+            fontWeight: FontWeight.w600,
+            fontSize: 15,
+          ),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: TraceColors.offWhite,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: TraceColors.lightGrey),
@@ -159,7 +192,10 @@ class AppTheme {
           borderSide: const BorderSide(color: TraceColors.error, width: 2),
         ),
         labelStyle: GoogleFonts.inter(color: TraceColors.medGrey, fontSize: 14),
-        hintStyle: GoogleFonts.inter(color: TraceColors.lightGrey, fontSize: 14),
+        hintStyle: GoogleFonts.inter(
+          color: TraceColors.lightGrey,
+          fontSize: 14,
+        ),
         prefixIconColor: TraceColors.royalBlue,
       ),
       cardTheme: CardThemeData(
@@ -171,17 +207,29 @@ class AppTheme {
       chipTheme: ChipThemeData(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         side: BorderSide.none,
-        labelStyle: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600),
+        labelStyle: GoogleFonts.inter(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
       ),
       tabBarTheme: TabBarThemeData(
         labelColor: TraceColors.gold,
         unselectedLabelColor: TraceColors.lightGrey,
         indicatorColor: TraceColors.gold,
         indicatorSize: TabBarIndicatorSize.label,
-        labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14),
-        unselectedLabelStyle: GoogleFonts.inter(fontWeight: FontWeight.w500, fontSize: 14),
+        labelStyle: GoogleFonts.inter(
+          fontWeight: FontWeight.w600,
+          fontSize: 14,
+        ),
+        unselectedLabelStyle: GoogleFonts.inter(
+          fontWeight: FontWeight.w500,
+          fontSize: 14,
+        ),
       ),
-      dividerTheme: const DividerThemeData(color: TraceColors.offWhite, thickness: 1),
+      dividerTheme: const DividerThemeData(
+        color: TraceColors.offWhite,
+        thickness: 1,
+      ),
       snackBarTheme: SnackBarThemeData(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         behavior: SnackBarBehavior.floating,

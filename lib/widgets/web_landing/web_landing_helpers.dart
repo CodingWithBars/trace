@@ -42,10 +42,7 @@ Widget buildEmptyState(String message, IconData icon) {
           const SizedBox(height: 12),
           Text(
             message,
-            style: GoogleFonts.inter(
-              color: TraceColors.medGrey,
-              fontSize: 14,
-            ),
+            style: GoogleFonts.inter(color: TraceColors.medGrey, fontSize: 14),
           ),
         ],
       ),
@@ -75,12 +72,38 @@ Widget buildBannerImage(String url, {BoxFit fit = BoxFit.cover}) {
 }
 
 String formatDate(DateTime dt) {
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const months = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
   return '${months[dt.month - 1]} ${dt.day}, ${dt.year}';
 }
 
 String formatDateShort(DateTime dt) {
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const months = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
   return '${months[dt.month - 1]} ${dt.day}';
 }
 

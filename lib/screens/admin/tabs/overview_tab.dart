@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../theme/app_theme.dart';
 import '../../../widgets/admin_widgets.dart';
 import '../../../services/auth_service.dart';
+import '../../../services/csv_report_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
@@ -26,9 +27,9 @@ class OverviewTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final currentUserEmail = ref.watch(authServiceProvider).currentUser?.email;
-    final canManageAdmins = currentUserEmail == 'iitsoofficer@dorsu.bc';
-    final canManageFunds = currentUserEmail == 'iitsoofficer@dorsu.bc' || currentUserEmail == 'auditor@scbc.dorsu';
+    final role = ref.watch(adminRoleProvider).value;
+    final canManageAdmins = role == 'superadmin';
+    final canManageFunds = role == 'superadmin' || role == 'auditor';
 
     void showAccessDenied(String message) {
       showDialog(
@@ -109,59 +110,175 @@ class OverviewTab extends ConsumerWidget {
                           : 0;
                       double income = 0;
                       double expense = 0;
-                    if (fundsSnap.hasData) {
-                      for (final d in fundsSnap.data!.docs) {
-                        final data = d.data() as Map<String, dynamic>;
-                        if (data['type'] == 'income' ||
-                            data['type'] == 'contribution') {
-                          income += (data['amount'] ?? 0).toDouble();
-                        } else if (data['type'] == 'expense') {
-                          expense += (data['amount'] ?? 0).toDouble();
+                      if (fundsSnap.hasData) {
+                        for (final d in fundsSnap.data!.docs) {
+                          final data = d.data() as Map<String, dynamic>;
+                          if (data['type'] == 'income' ||
+                              data['type'] == 'contribution') {
+                            income += (data['amount'] ?? 0).toDouble();
+                          } else if (data['type'] == 'expense') {
+                            expense += (data['amount'] ?? 0).toDouble();
+                          }
                         }
                       }
-                    }
-                    final todayScans = attendSnap.hasData
-                        ? attendSnap.data!.docs.length
-                        : 0;
+                      final todayScans = attendSnap.hasData
+                          ? attendSnap.data!.docs.length
+                          : 0;
 
-                    return LayoutBuilder(
-                      builder: (ctx, constraints) {
-                        final isWide = constraints.maxWidth > 600;
+                      return LayoutBuilder(
+                        builder: (ctx, constraints) {
+                          final isWide = constraints.maxWidth > 600;
 
-                        Widget buildCard(Widget child, {bool fullWidth = false}) {
-                          return AspectRatio(
-                            aspectRatio: isWide ? 2.0 : (fullWidth ? 4.0 : 2.0),
-                            child: child,
-                          );
-                        }
+                          Widget buildCard(
+                            Widget child, {
+                            bool fullWidth = false,
+                          }) {
+                            return AspectRatio(
+                              aspectRatio: isWide
+                                  ? 2.0
+                                  : (fullWidth ? 4.0 : 2.0),
+                              child: child,
+                            );
+                          }
 
-                        if (isWide) {
+                          if (isWide) {
+                            return Column(
+                              children: [
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: buildCard(
+                                        AdminStatCard(
+                                          label: 'Collected',
+                                          value:
+                                              '₱${NumberFormat('#,##0.00', 'en_US').format(income)}',
+                                          icon: Icons
+                                              .account_balance_wallet_rounded,
+                                          color: Colors.green,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: buildCard(
+                                        AdminStatCard(
+                                          label: 'Expenses',
+                                          value:
+                                              '₱${NumberFormat('#,##0.00', 'en_US').format(expense)}',
+                                          icon: Icons.money_off_rounded,
+                                          color: TraceColors.error,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: buildCard(
+                                        AdminStatCard(
+                                          label: 'Events',
+                                          value: eventCount.toString(),
+                                          icon: Icons.event_rounded,
+                                          color: TraceColors.gold,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: buildCard(
+                                        GestureDetector(
+                                          onTap: () =>
+                                              context.push('/admin/students'),
+                                          child: AdminStatCard(
+                                            label: 'Students',
+                                            value: studentCount.toString(),
+                                            icon: Icons.people_rounded,
+                                            color: TraceColors.royalBlue,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: buildCard(
+                                        AdminStatCard(
+                                          label: 'Scans Today',
+                                          value: todayScans.toString(),
+                                          icon: Icons.qr_code_scanner_rounded,
+                                          color: Colors.purple,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: buildCard(
+                                        GestureDetector(
+                                          onTap: () =>
+                                              context.push('/admin/id-claims'),
+                                          child: AdminStatCard(
+                                            label: 'Pending Claims',
+                                            value: pendingClaimsCount
+                                                .toString(),
+                                            icon: Icons.verified_user_rounded,
+                                            color: pendingClaimsCount > 0
+                                                ? TraceColors.error
+                                                : TraceColors.medGrey,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    const Expanded(child: SizedBox()),
+                                    const SizedBox(width: 12),
+                                    const Expanded(child: SizedBox()),
+                                  ],
+                                ),
+                              ],
+                            );
+                          }
+
+                          // Mobile Layout
                           return Column(
                             children: [
                               Row(
                                 children: [
                                   Expanded(
                                     child: buildCard(
+                                      fullWidth: true,
                                       AdminStatCard(
                                         label: 'Collected',
-                                        value: '₱${NumberFormat('#,##0.00', 'en_US').format(income)}',
-                                        icon: Icons.account_balance_wallet_rounded,
+                                        value:
+                                            '₱${NumberFormat('#,##0.00', 'en_US').format(income)}',
+                                        icon: Icons
+                                            .account_balance_wallet_rounded,
                                         color: Colors.green,
                                       ),
                                     ),
                                   ),
-                                  const SizedBox(width: 12),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
                                   Expanded(
                                     child: buildCard(
+                                      fullWidth: true,
                                       AdminStatCard(
                                         label: 'Expenses',
-                                        value: '₱${NumberFormat('#,##0.00', 'en_US').format(expense)}',
+                                        value:
+                                            '₱${NumberFormat('#,##0.00', 'en_US').format(expense)}',
                                         icon: Icons.money_off_rounded,
                                         color: TraceColors.error,
                                       ),
                                     ),
                                   ),
-                                  const SizedBox(width: 12),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
                                   Expanded(
                                     child: buildCard(
                                       AdminStatCard(
@@ -176,7 +293,8 @@ class OverviewTab extends ConsumerWidget {
                                   Expanded(
                                     child: buildCard(
                                       GestureDetector(
-                                        onTap: () => context.push('/admin/students'),
+                                        onTap: () =>
+                                            context.push('/admin/students'),
                                         child: AdminStatCard(
                                           label: 'Students',
                                           value: studentCount.toString(),
@@ -205,128 +323,31 @@ class OverviewTab extends ConsumerWidget {
                                   Expanded(
                                     child: buildCard(
                                       GestureDetector(
-                                        onTap: () => context.push('/admin/id-claims'),
+                                        onTap: () =>
+                                            context.push('/admin/id-claims'),
                                         child: AdminStatCard(
                                           label: 'Pending Claims',
                                           value: pendingClaimsCount.toString(),
                                           icon: Icons.verified_user_rounded,
-                                          color: pendingClaimsCount > 0 ? TraceColors.error : TraceColors.medGrey,
+                                          color: pendingClaimsCount > 0
+                                              ? TraceColors.error
+                                              : TraceColors.medGrey,
                                         ),
                                       ),
                                     ),
                                   ),
-                                  const SizedBox(width: 12),
-                                  const Expanded(child: SizedBox()),
-                                  const SizedBox(width: 12),
-                                  const Expanded(child: SizedBox()),
                                 ],
                               ),
                             ],
                           );
-                        }
-
-                        // Mobile Layout
-                        return Column(
-                          children: [
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: buildCard(
-                                    fullWidth: true,
-                                    AdminStatCard(
-                                      label: 'Collected',
-                                      value: '₱${NumberFormat('#,##0.00', 'en_US').format(income)}',
-                                      icon: Icons.account_balance_wallet_rounded,
-                                      color: Colors.green,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: buildCard(
-                                    fullWidth: true,
-                                    AdminStatCard(
-                                      label: 'Expenses',
-                                      value: '₱${NumberFormat('#,##0.00', 'en_US').format(expense)}',
-                                      icon: Icons.money_off_rounded,
-                                      color: TraceColors.error,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: buildCard(
-                                    AdminStatCard(
-                                      label: 'Events',
-                                      value: eventCount.toString(),
-                                      icon: Icons.event_rounded,
-                                      color: TraceColors.gold,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: buildCard(
-                                    GestureDetector(
-                                      onTap: () => context.push('/admin/students'),
-                                      child: AdminStatCard(
-                                        label: 'Students',
-                                        value: studentCount.toString(),
-                                        icon: Icons.people_rounded,
-                                        color: TraceColors.royalBlue,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: buildCard(
-                                    AdminStatCard(
-                                      label: 'Scans Today',
-                                      value: todayScans.toString(),
-                                      icon: Icons.qr_code_scanner_rounded,
-                                      color: Colors.purple,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: buildCard(
-                                    GestureDetector(
-                                      onTap: () => context.push('/admin/id-claims'),
-                                      child: AdminStatCard(
-                                        label: 'Pending Claims',
-                                        value: pendingClaimsCount.toString(),
-                                        icon: Icons.verified_user_rounded,
-                                        color: pendingClaimsCount > 0 ? TraceColors.error : TraceColors.medGrey,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        );
-                      },
-                    );
-                  },
+                        },
+                      );
+                    },
+                  ),
                 ),
               ),
             ),
           ),
-        ),
           const SizedBox(height: 24),
           // Quick actions
           Row(
@@ -343,10 +364,16 @@ class OverviewTab extends ConsumerWidget {
               TextButton.icon(
                 onPressed: () => context.push('/admin/logs'),
                 icon: const Icon(Icons.history_rounded, size: 18),
-                label: Text('Logs', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                label: Text(
+                  'Logs',
+                  style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                ),
                 style: TextButton.styleFrom(
                   foregroundColor: TraceColors.royalBlue,
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                 ),
               ),
             ],
@@ -388,7 +415,11 @@ class OverviewTab extends ConsumerWidget {
                     child: AdminQuickAction(
                       label: 'Add Fund',
                       icon: Icons.attach_money_rounded,
-                      onTap: canManageFunds ? onAddFund : () => showAccessDenied('Only the Super Admin or Auditor can add funds.'),
+                      onTap: canManageFunds
+                          ? onAddFund
+                          : () => showAccessDenied(
+                              'Only the Super Admin or Auditor can add funds.',
+                            ),
                     ),
                   ),
                 ],
@@ -400,7 +431,11 @@ class OverviewTab extends ConsumerWidget {
                     child: AdminQuickAction(
                       label: 'Manage Admins',
                       icon: Icons.admin_panel_settings_rounded,
-                      onTap: canManageAdmins ? onAddAdmin : () => showAccessDenied('Only the Super Admin can manage admin accounts.'),
+                      onTap: canManageAdmins
+                          ? onAddAdmin
+                          : () => showAccessDenied(
+                              'Only the Super Admin can manage admin accounts.',
+                            ),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -409,6 +444,33 @@ class OverviewTab extends ConsumerWidget {
                       label: 'My Profile',
                       icon: Icons.person_rounded,
                       onTap: () => context.push('/admin/profile'),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: AdminQuickAction(
+                      label: 'Semester Report',
+                      icon: Icons.assessment_rounded,
+                      onTap: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Generating Comprehensive Report...'),
+                          ),
+                        );
+                        CsvReportService.generateSemesterReport();
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: AdminQuickAction(
+                      label: 'Sync Center',
+                      icon: Icons.cloud_sync_rounded,
+                      onTap: () => context.push('/admin/sync-center'),
                     ),
                   ),
                 ],

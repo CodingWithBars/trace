@@ -10,6 +10,24 @@ final authStateProvider = StreamProvider<User?>((ref) {
   return ref.watch(authServiceProvider).authStateChanges;
 });
 
+final adminRoleProvider = FutureProvider<String?>((ref) async {
+  final user = ref.watch(authStateProvider).value;
+  if (user == null) return null;
+
+  try {
+    final doc = await FirestoreService.admins.doc(user.uid).get();
+    if (doc.exists) {
+      final data = doc.data() as Map<String, dynamic>;
+      return data['role']?.toString().toLowerCase() ?? 'admin';
+    } else if (user.email?.toLowerCase() == 'iitsoofficer@dorsu.bc') {
+      return 'superadmin';
+    }
+  } catch (e) {
+    // Permission denied or other error
+  }
+  return null;
+});
+
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
@@ -20,8 +38,11 @@ class AuthService {
 
   Future<String?> signIn(String email, String password) async {
     try {
-      final cred = await _auth.signInWithEmailAndPassword(email: email, password: password);
-      
+      final cred = await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
       if (cred.user != null) {
         final doc = await FirestoreService.admins.doc(cred.user!.uid).get();
         if (!doc.exists) {
@@ -39,7 +60,7 @@ class AuthService {
             return 'Access Denied: You do not have admin privileges.';
           }
         }
-        
+
         // Log the login event
         String adminName = 'Admin';
         if (doc.exists) {
@@ -50,7 +71,7 @@ class AuthService {
         } else if (email.toLowerCase() == 'iitsoofficer@dorsu.bc') {
           adminName = 'Master Officer';
         }
-        
+
         await ActivityLogService.log(
           action: 'Login',
           message: 'Admin logged in',
@@ -93,7 +114,7 @@ class AuthService {
             adminName = data['name'];
           }
         }
-        
+
         await ActivityLogService.log(
           action: 'Logout',
           message: 'Admin logged out',
@@ -111,11 +132,14 @@ class AuthService {
   Future<String?> updateEmail(String currentPassword, String newEmail) async {
     if (currentUser == null) return 'No user signed in.';
     try {
-      final cred = EmailAuthProvider.credential(email: currentUser!.email!, password: currentPassword);
+      final cred = EmailAuthProvider.credential(
+        email: currentUser!.email!,
+        password: currentPassword,
+      );
       await currentUser!.reauthenticateWithCredential(cred);
-      
+
       await currentUser!.verifyBeforeUpdateEmail(newEmail);
-      
+
       // Update email in firestore as well
       await FirestoreService.admins.doc(currentUser!.uid).update({
         'email': newEmail,
@@ -132,10 +156,16 @@ class AuthService {
     }
   }
 
-  Future<String?> updatePassword(String currentPassword, String newPassword) async {
+  Future<String?> updatePassword(
+    String currentPassword,
+    String newPassword,
+  ) async {
     if (currentUser == null) return 'No user signed in.';
     try {
-      final cred = EmailAuthProvider.credential(email: currentUser!.email!, password: currentPassword);
+      final cred = EmailAuthProvider.credential(
+        email: currentUser!.email!,
+        password: currentPassword,
+      );
       await currentUser!.reauthenticateWithCredential(cred);
       await currentUser!.updatePassword(newPassword);
       return null;
@@ -148,17 +178,24 @@ class AuthService {
     }
   }
 
-  Future<String?> createAdmin(String name, String email, String password) async {
+  Future<String?> createAdmin(
+    String name,
+    String email,
+    String password,
+  ) async {
     try {
       // Initialize a secondary Firebase app to prevent logging out the current admin
       FirebaseApp tempApp = await Firebase.initializeApp(
         name: 'tempAdminCreator',
         options: Firebase.app().options,
       );
-      
+
       final tempAuth = FirebaseAuth.instanceFor(app: tempApp);
-      final userCred = await tempAuth.createUserWithEmailAndPassword(email: email, password: password);
-      
+      final userCred = await tempAuth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
       if (userCred.user != null) {
         await FirestoreService.admins.doc(userCred.user!.uid).set({
           'name': name,
@@ -175,7 +212,7 @@ class AuthService {
       try {
         await Firebase.app('tempAdminCreator').delete();
       } catch (_) {}
-      
+
       switch (e.code) {
         case 'email-already-in-use':
           return 'An account already exists with this email.';
@@ -213,6 +250,7 @@ class FirestoreService {
   static CollectionReference get events => _db.collection('events');
   static CollectionReference get attendance => _db.collection('attendance');
   static CollectionReference get funds => _db.collection('funds');
-  static CollectionReference get announcements => _db.collection('announcements');
+  static CollectionReference get announcements =>
+      _db.collection('announcements');
   static CollectionReference get admins => _db.collection('admins');
 }

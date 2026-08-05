@@ -416,7 +416,8 @@ class _AnnouncementsTabState extends State<AnnouncementsTab> {
             ),
           );
           if (confirm == true) {
-            final title = (doc.data() as Map<String, dynamic>)['title'] ?? 'Announcement';
+            final title =
+                (doc.data() as Map<String, dynamic>)['title'] ?? 'Announcement';
             await doc.reference.delete();
             await ActivityLogService.log(
               action: 'announcement_deleted',

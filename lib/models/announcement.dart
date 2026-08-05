@@ -21,8 +21,12 @@ class Announcement {
       title: data['title'] ?? '',
       content: data['content'] ?? '',
       category: data['category'] ?? '',
-      datePosted: data['date_posted'] != null ? (data['date_posted'] as dynamic).toDate() : DateTime.now(),
-      scheduledDate: data['scheduled_date'] != null ? (data['scheduled_date'] as dynamic).toDate() : null,
+      datePosted: data['date_posted'] != null
+          ? (data['date_posted'] as dynamic).toDate()
+          : DateTime.now(),
+      scheduledDate: data['scheduled_date'] != null
+          ? (data['scheduled_date'] as dynamic).toDate()
+          : null,
     );
   }
 

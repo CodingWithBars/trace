@@ -32,14 +32,14 @@ class TraceAppBar extends StatelessWidget implements PreferredSizeWidget {
       title: (title == null || title == 'TRACE')
           ? Row(
               mainAxisSize: MainAxisSize.min,
-              children: [
-                Image.asset('assets/trace-logo3.png', height: 26),
-              ],
+              children: [Image.asset('assets/trace-logo3.png', height: 26)],
             )
           : Text(
               title!,
               style: GoogleFonts.inter(
-                fontSize: 18, fontWeight: FontWeight.w700, color: TraceColors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: TraceColors.white,
               ),
               overflow: TextOverflow.ellipsis,
             ),
@@ -88,17 +88,27 @@ class GoldButton extends StatelessWidget {
       ),
       child: isLoading
           ? const SizedBox(
-              width: 20, height: 20,
-              child: CircularProgressIndicator(strokeWidth: 2, color: TraceColors.navyBlue),
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: TraceColors.navyBlue,
+              ),
             )
           : Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (icon != null) ...[Icon(icon, size: 18), const SizedBox(width: 8)],
+                if (icon != null) ...[
+                  Icon(icon, size: 18),
+                  const SizedBox(width: 8),
+                ],
                 Flexible(
                   child: Text(
                     label,
-                    style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 15),
+                    style: GoogleFonts.inter(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15,
+                    ),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -133,7 +143,11 @@ class StatusChip extends StatelessWidget {
       case 'absent':
         return StatusChip(label: 'Absent', color: TraceColors.error);
       case 'late':
-        return StatusChip(label: 'Late', color: TraceColors.darkGold, textColor: TraceColors.navyBlue);
+        return StatusChip(
+          label: 'Late',
+          color: TraceColors.darkGold,
+          textColor: TraceColors.navyBlue,
+        );
       // Legacy statuses (backward compat for existing records)
       case 'complete':
       case 'whole_day_complete':
@@ -145,14 +159,22 @@ class StatusChip extends StatelessWidget {
       case 'pm_in':
         return StatusChip(label: 'Incomplete', color: TraceColors.warning);
       case 'late entry':
-        return StatusChip(label: 'Late', color: TraceColors.darkGold, textColor: TraceColors.navyBlue);
+        return StatusChip(
+          label: 'Late',
+          color: TraceColors.darkGold,
+          textColor: TraceColors.navyBlue,
+        );
       // Event statuses
       case 'upcoming':
         return StatusChip(label: 'Upcoming', color: TraceColors.medGrey);
       case 'ongoing':
         return StatusChip(label: 'Ongoing', color: TraceColors.success);
       case 'completed':
-        return StatusChip(label: 'Completed', color: TraceColors.darkGold, textColor: TraceColors.navyBlue);
+        return StatusChip(
+          label: 'Completed',
+          color: TraceColors.darkGold,
+          textColor: TraceColors.navyBlue,
+        );
       case 're-scheduled':
         return StatusChip(label: 'Re-Scheduled', color: TraceColors.warning);
       case 'cancelled':
@@ -177,8 +199,10 @@ class StatusChip extends StatelessWidget {
         child: Text(
           label,
           style: GoogleFonts.inter(
-            fontSize: 11, fontWeight: FontWeight.w700,
-            color: color, letterSpacing: 0.5,
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            color: color,
+            letterSpacing: 0.5,
           ),
         ),
       ),
@@ -224,11 +248,14 @@ class TraceCard extends StatelessWidget {
           decoration: BoxDecoration(
             color: TraceColors.white,
             borderRadius: BorderRadius.circular(16),
-            border: hasBorder ? Border.all(color: TraceColors.gold, width: 1.5) : null,
+            border: hasBorder
+                ? Border.all(color: TraceColors.gold, width: 1.5)
+                : null,
             boxShadow: [
               BoxShadow(
                 color: TraceColors.royalBlue.withValues(alpha: 0.08),
-                blurRadius: 16, offset: const Offset(0, 4),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
