@@ -12,7 +12,7 @@ import '../services/attendance_service.dart';
 import '../services/event_service.dart';
 import '../models/event.dart';
 import '../models/student.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
+import '../services/network_service.dart';
 import 'dart:async';
 import '../widgets/scan_result_modal.dart';
 
@@ -34,9 +34,6 @@ class _ScannerScreenState extends State<ScannerScreen> with TickerProviderStateM
   bool _isOfflineMode = false;
   List<Student>? _offlineStudents;
   Map<String, Map<String, dynamic>>? _offlineAttendance;
-  StreamSubscription? _connectivitySub;
-  bool _isNetworkOffline = false;
-
   Duration _ntpOffset = Duration.zero;
   Event? _selectedEvent;
   List<Event> _activeEvents = [];
@@ -46,10 +43,6 @@ class _ScannerScreenState extends State<ScannerScreen> with TickerProviderStateM
   @override
   void initState() {
     super.initState();
-    _connectivitySub = Connectivity().onConnectivityChanged.listen((results) {
-      final isOffline = results.contains(ConnectivityResult.none) || results.isEmpty;
-      if (mounted) setState(() => _isNetworkOffline = isOffline);
-    });
     _scanLineController = AnimationController(vsync: this, duration: const Duration(seconds: 2))..repeat(reverse: true);
     _scanLineAnim = CurvedAnimation(parent: _scanLineController, curve: Curves.easeInOut);
     _syncTime();
@@ -58,7 +51,7 @@ class _ScannerScreenState extends State<ScannerScreen> with TickerProviderStateM
 
 
   Future<void> _syncTime() async {
-    if (_isNetworkOffline) return;
+    if (NetworkService().isOffline) return;
     try {
       final ntpTime = await NTP.now();
       _ntpOffset = ntpTime.difference(DateTime.now());
@@ -275,7 +268,6 @@ class _ScannerScreenState extends State<ScannerScreen> with TickerProviderStateM
 
   @override
   void dispose() {
-    _connectivitySub?.cancel();
     _controller.dispose();
     _scanLineController.dispose();
     super.dispose();
@@ -357,7 +349,7 @@ class _ScannerScreenState extends State<ScannerScreen> with TickerProviderStateM
           SafeArea(
             child: Column(
               children: [
-                if (_isNetworkOffline || _isOfflineMode)
+                if (NetworkService().isOffline || _isOfflineMode)
                   Container(
                     width: double.infinity,
                     color: Colors.amber.shade200,
