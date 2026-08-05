@@ -88,31 +88,7 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
     );
   }
 
-  Widget _navLink(
-    BuildContext context,
-    String label, {
-    String? anchor,
-    String? route,
-  }) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: () {
-          if (route != null) {
-            context.go(route);
-          }
-        },
-        child: Text(
-          label,
-          style: GoogleFonts.inter(
-            color: Colors.white.withValues(alpha: 0.75),
-            fontWeight: FontWeight.w500,
-            fontSize: 14,
-          ),
-        ),
-      ),
-    );
-  }
+
 
   Widget _registerButton(BuildContext context, {bool small = false}) {
     return MouseRegion(

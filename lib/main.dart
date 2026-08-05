@@ -8,6 +8,7 @@ import 'theme/app_theme.dart';
 import 'services/auth_service.dart';
 import 'routes.dart';
 import 'services/notification_service.dart';
+import 'services/network_service.dart';
 
 import 'package:flutter/services.dart';
 
@@ -26,6 +27,7 @@ void main() async {
     await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
     FirebaseFirestore.instance.settings = const Settings(persistenceEnabled: true, cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED);
     await FirestoreService.initialize();
+    await NetworkService.initialize();
     
     // Initialize notification service but catch any errors (e.g. permission dialogs failing before runApp)
     try {
